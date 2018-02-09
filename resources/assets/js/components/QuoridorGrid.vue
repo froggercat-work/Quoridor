@@ -1,5 +1,8 @@
 <template>
 	<div>
+		<div>
+			{{ informationMessage }}
+		</div>
 		<div class="gameStatus" v-bind:class="gameStatusColor" @click="finishTurn">
 		    {{ gameStatusMessage }}
 		</div>
@@ -132,7 +135,9 @@
 				moves: 0,
 
 				// stores the placement of X and O in -cells by their cell number
-				cells: Array(81).fill('')
+				cells: Array(81).fill(''),
+
+				informationMessage: "Player O, move your pawn or place a wall."
 			}
 		},
 		methods: {
@@ -143,6 +148,7 @@
 			changePlayer() {
 				this.activePlayer = this.nonActivePlayer;
 				this.frozen = false;
+				this.informationMessage = "Player " + this.activePlayer + ", move your pawn or place a wall."
 			},
 			currentLocation(player) {
 		    	return this.cells.indexOf(player) + 1; // Our cell ID's start at 1
@@ -178,11 +184,10 @@
 				if (Math.abs(location - newLocation) === 1
 					|| Math.abs(location - newLocation) === 9)
 				{
-				console.log("Move is legal.")
+					this.informationMessage = "Move is legal."
 					return true;
 				}
 
-				console.log("Didn't try to move past edge of board, but the move is still illegal.")
 				return false;
 			}
 		},
@@ -205,13 +210,18 @@
 			// it is called by the Cell component
 			Event.$on('strike', (cellNumber) => {
 				console.log("Board frozen? " + this.frozen);
-				if (this.frozen
-					|| !this.isLegalMove(this.activePlayer, cellNumber))
+				if (!this.isLegalMove(this.activePlayer, cellNumber))
 				{
-					console.log("You cannot move.");
+					this.informationMessage = "Illegal move."
 					return;
 				}
-				
+
+				if (this.frozen)
+				{
+					this.informationMessage = "You cannot move. Click the yellow box to change turns.";
+					return;
+				}
+
 	        	this.$children[this.currentLocation(this.activePlayer)-1].clear();
 	        	this.cells[this.currentLocation(this.activePlayer)-1] = '';
 
@@ -250,9 +260,9 @@
 
 	.gameStatus {
 	margin: 0;
-	padding: 15;
-	border-top-left-radius: 20;
-	border-top-right-radius: 20;
+	padding: 15px;
+	border-top-left-radius: 20px;
+	border-top-right-radius: 20px;
 	background-color: #f1c40f;
 	color: #fff;
 	font-size: 1.4em;
