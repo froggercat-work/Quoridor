@@ -1,5 +1,5 @@
 <template>
-	<td class="cell">{{ mark }}</td>
+	<td class="cell" @click="strike">{{ mark }}</td>
 </template>
 
 <script>
@@ -13,6 +13,17 @@
 	        // holds either X or O to be displayed in the td
 	        mark: ''
 		    }    
+		},
+		methods: {
+			set(player) {
+				this.mark = player;
+			},
+			clear() {
+				this.mark = "";
+			},
+			strike() {
+				Event.$emit("strike", this.name)
+			}
 		}
 	}
 </script>
@@ -22,7 +33,7 @@
 	  width: 5vw;
 	  height: 5vw;
 	  border: 6px solid #2c3e50;
-	  font-size: 3.5em;
+	  font-size: 4vw;
 	  font-family: 'Gochi Hand', sans-serif;
 	}
 

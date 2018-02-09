@@ -1,114 +1,115 @@
 <template>
-<div>
-	<div class="gameStatus" v-bind:class="gameStatusColor">
-	    {{ gameStatusMessage }}
+	<div>
+		<div class="gameStatus" v-bind:class="gameStatusColor" @click="finishTurn">
+		    {{ gameStatusMessage }}
+		</div>
+		<table class="grid">
+			<!-- Create each of these using a v-for instead, but need to modify intial pawn placement logic -->
+			<tr>
+				<quoridor-cell name="1"></quoridor-cell>
+				<quoridor-cell name="2"></quoridor-cell>
+				<quoridor-cell name="3"></quoridor-cell>
+				<quoridor-cell name="4"></quoridor-cell>
+				<quoridor-cell name="5"></quoridor-cell>
+				<quoridor-cell name="6"></quoridor-cell>
+				<quoridor-cell name="7"></quoridor-cell>
+				<quoridor-cell name="8"></quoridor-cell>
+				<quoridor-cell name="9"></quoridor-cell>
+			</tr>
+			<tr>
+				<quoridor-cell name="10"></quoridor-cell>
+				<quoridor-cell name="11"></quoridor-cell>
+				<quoridor-cell name="12"></quoridor-cell>
+				<quoridor-cell name="13"></quoridor-cell>
+				<quoridor-cell name="14"></quoridor-cell>
+				<quoridor-cell name="15"></quoridor-cell>
+				<quoridor-cell name="16"></quoridor-cell>
+				<quoridor-cell name="17"></quoridor-cell>
+				<quoridor-cell name="18"></quoridor-cell>
+			</tr>
+			<tr>
+				<quoridor-cell name="19"></quoridor-cell>
+				<quoridor-cell name="20"></quoridor-cell>
+				<quoridor-cell name="21"></quoridor-cell>
+				<quoridor-cell name="22"></quoridor-cell>
+				<quoridor-cell name="23"></quoridor-cell>
+				<quoridor-cell name="24"></quoridor-cell>
+				<quoridor-cell name="25"></quoridor-cell>
+				<quoridor-cell name="26"></quoridor-cell>
+				<quoridor-cell name="27"></quoridor-cell>
+			</tr>
+			<tr>
+				<quoridor-cell name="28"></quoridor-cell>
+				<quoridor-cell name="29"></quoridor-cell>
+				<quoridor-cell name="30"></quoridor-cell>
+				<quoridor-cell name="31"></quoridor-cell>
+				<quoridor-cell name="32"></quoridor-cell>
+				<quoridor-cell name="33"></quoridor-cell>
+				<quoridor-cell name="34"></quoridor-cell>
+				<quoridor-cell name="35"></quoridor-cell>
+				<quoridor-cell name="36"></quoridor-cell>
+			</tr>
+			<tr>
+				<quoridor-cell name="37"></quoridor-cell>
+				<quoridor-cell name="38"></quoridor-cell>
+				<quoridor-cell name="39"></quoridor-cell>
+				<quoridor-cell name="40"></quoridor-cell>
+				<quoridor-cell name="41"></quoridor-cell>
+				<quoridor-cell name="42"></quoridor-cell>
+				<quoridor-cell name="43"></quoridor-cell>
+				<quoridor-cell name="44"></quoridor-cell>
+				<quoridor-cell name="45"></quoridor-cell>
+			</tr>
+			<tr>
+				<quoridor-cell name="46"></quoridor-cell>
+				<quoridor-cell name="47"></quoridor-cell>
+				<quoridor-cell name="48"></quoridor-cell>
+				<quoridor-cell name="49"></quoridor-cell>
+				<quoridor-cell name="50"></quoridor-cell>
+				<quoridor-cell name="51"></quoridor-cell>
+				<quoridor-cell name="52"></quoridor-cell>
+				<quoridor-cell name="53"></quoridor-cell>
+				<quoridor-cell name="54"></quoridor-cell>
+			</tr>
+			<tr>
+				<quoridor-cell name="55"></quoridor-cell>
+				<quoridor-cell name="56"></quoridor-cell>
+				<quoridor-cell name="57"></quoridor-cell>
+				<quoridor-cell name="58"></quoridor-cell>
+				<quoridor-cell name="59"></quoridor-cell>
+				<quoridor-cell name="60"></quoridor-cell>
+				<quoridor-cell name="61"></quoridor-cell>
+				<quoridor-cell name="62"></quoridor-cell>
+				<quoridor-cell name="63"></quoridor-cell>
+			</tr>
+			<tr>
+				<quoridor-cell name="64"></quoridor-cell>
+				<quoridor-cell name="65"></quoridor-cell>
+				<quoridor-cell name="66"></quoridor-cell>
+				<quoridor-cell name="67"></quoridor-cell>
+				<quoridor-cell name="68"></quoridor-cell>
+				<quoridor-cell name="69"></quoridor-cell>
+				<quoridor-cell name="70"></quoridor-cell>
+				<quoridor-cell name="71"></quoridor-cell>
+				<quoridor-cell name="72"></quoridor-cell>
+			</tr>
+			<tr>
+				<quoridor-cell name="73"></quoridor-cell>
+				<quoridor-cell name="74"></quoridor-cell>
+				<quoridor-cell name="75"></quoridor-cell>
+				<quoridor-cell name="76"></quoridor-cell>
+				<quoridor-cell name="77"></quoridor-cell>
+				<quoridor-cell name="78"></quoridor-cell>
+				<quoridor-cell name="79"></quoridor-cell>
+				<quoridor-cell name="80"></quoridor-cell>
+				<quoridor-cell name="81"></quoridor-cell>
+			</tr>
+		</table>
 	</div>
-	<table class="grid">
-	<tr>
-		<quoridor-cell name="1x1"></quoridor-cell>
-		<quoridor-cell name="1x2"></quoridor-cell>
-		<quoridor-cell name="1x3"></quoridor-cell>
-		<quoridor-cell name="1x4"></quoridor-cell>
-		<quoridor-cell name="1x5"></quoridor-cell>
-		<quoridor-cell name="1x6"></quoridor-cell>
-		<quoridor-cell name="1x7"></quoridor-cell>
-		<quoridor-cell name="1x8"></quoridor-cell>
-		<quoridor-cell name="1x9"></quoridor-cell>
-	</tr>
-	<tr>
-		<quoridor-cell name="2x1"></quoridor-cell>
-		<quoridor-cell name="2x2"></quoridor-cell>
-		<quoridor-cell name="2x3"></quoridor-cell>
-		<quoridor-cell name="2x4"></quoridor-cell>
-		<quoridor-cell name="2x5"></quoridor-cell>
-		<quoridor-cell name="2x6"></quoridor-cell>
-		<quoridor-cell name="2x7"></quoridor-cell>
-		<quoridor-cell name="2x8"></quoridor-cell>
-		<quoridor-cell name="2x9"></quoridor-cell>
-	</tr>
-	<tr>
-		<quoridor-cell name="3x1"></quoridor-cell>
-		<quoridor-cell name="3x2"></quoridor-cell>
-		<quoridor-cell name="3x3"></quoridor-cell>
-		<quoridor-cell name="3x4"></quoridor-cell>
-		<quoridor-cell name="3x5"></quoridor-cell>
-		<quoridor-cell name="3x6"></quoridor-cell>
-		<quoridor-cell name="3x7"></quoridor-cell>
-		<quoridor-cell name="3x8"></quoridor-cell>
-		<quoridor-cell name="3x9"></quoridor-cell>
-	</tr>
-	<tr>
-		<quoridor-cell name="4x1"></quoridor-cell>
-		<quoridor-cell name="4x2"></quoridor-cell>
-		<quoridor-cell name="4x3"></quoridor-cell>
-		<quoridor-cell name="4x4"></quoridor-cell>
-		<quoridor-cell name="4x5"></quoridor-cell>
-		<quoridor-cell name="4x6"></quoridor-cell>
-		<quoridor-cell name="4x7"></quoridor-cell>
-		<quoridor-cell name="4x8"></quoridor-cell>
-		<quoridor-cell name="4x9"></quoridor-cell>
-	</tr>
-	<tr>
-		<quoridor-cell name="5x1"></quoridor-cell>
-		<quoridor-cell name="5x2"></quoridor-cell>
-		<quoridor-cell name="5x3"></quoridor-cell>
-		<quoridor-cell name="5x4"></quoridor-cell>
-		<quoridor-cell name="5x5"></quoridor-cell>
-		<quoridor-cell name="5x6"></quoridor-cell>
-		<quoridor-cell name="5x7"></quoridor-cell>
-		<quoridor-cell name="5x8"></quoridor-cell>
-		<quoridor-cell name="5x9"></quoridor-cell>
-	</tr>
-	<tr>
-		<quoridor-cell name="6x1"></quoridor-cell>
-		<quoridor-cell name="6x2"></quoridor-cell>
-		<quoridor-cell name="6x3"></quoridor-cell>
-		<quoridor-cell name="6x4"></quoridor-cell>
-		<quoridor-cell name="6x5"></quoridor-cell>
-		<quoridor-cell name="6x6"></quoridor-cell>
-		<quoridor-cell name="6x7"></quoridor-cell>
-		<quoridor-cell name="6x8"></quoridor-cell>
-		<quoridor-cell name="6x9"></quoridor-cell>
-	</tr>
-	<tr>
-		<quoridor-cell name="7x1"></quoridor-cell>
-		<quoridor-cell name="7x2"></quoridor-cell>
-		<quoridor-cell name="7x3"></quoridor-cell>
-		<quoridor-cell name="7x4"></quoridor-cell>
-		<quoridor-cell name="7x5"></quoridor-cell>
-		<quoridor-cell name="7x6"></quoridor-cell>
-		<quoridor-cell name="7x7"></quoridor-cell>
-		<quoridor-cell name="7x8"></quoridor-cell>
-		<quoridor-cell name="7x9"></quoridor-cell>
-	</tr>
-	<tr>
-		<quoridor-cell name="8x1"></quoridor-cell>
-		<quoridor-cell name="8x2"></quoridor-cell>
-		<quoridor-cell name="8x3"></quoridor-cell>
-		<quoridor-cell name="8x4"></quoridor-cell>
-		<quoridor-cell name="8x5"></quoridor-cell>
-		<quoridor-cell name="8x6"></quoridor-cell>
-		<quoridor-cell name="8x7"></quoridor-cell>
-		<quoridor-cell name="8x8"></quoridor-cell>
-		<quoridor-cell name="8x9"></quoridor-cell>
-	</tr>
-	<tr>
-		<quoridor-cell name="9x1"></quoridor-cell>
-		<quoridor-cell name="9x2"></quoridor-cell>
-		<quoridor-cell name="9x3"></quoridor-cell>
-		<quoridor-cell name="9x4"></quoridor-cell>
-		<quoridor-cell name="9x5"></quoridor-cell>
-		<quoridor-cell name="9x6"></quoridor-cell>
-		<quoridor-cell name="9x7"></quoridor-cell>
-		<quoridor-cell name="9x8"></quoridor-cell>
-		<quoridor-cell name="9x9"></quoridor-cell>
-	</tr>
-</table>
-</div>
 </template>
 
 <script>
-	import QuoridorCell from './QuoridorCell.vue'
+	import QuoridorCell from './QuoridorCell.vue';
 	export default {
 		data () {
 			return {
@@ -127,28 +128,111 @@
 				// statusDraw is purple for a draw
 				gameStatusColor: 'statusTurn',
 
-				// no. of moves played by both players in a single game (max = 9)
+				// no. of moves played by both players in a single game (m = 9)
 				moves: 0,
 
 				// stores the placement of X and O in -cells by their cell number
-				cells: {
-					1: '', 2: '', 3: '',
-					4: '', 5: '', 6: '',
-					7: '', 8: '', 9: ''
-				},
+				cells: Array(81).fill('')
+			}
+		},
+		methods: {
+			finishTurn() {
+				this.changePlayer();
+				this.gameStatusMessage = `${this.activePlayer}'s turn`;
+			},
+			changePlayer() {
+				this.activePlayer = this.nonActivePlayer;
+			},
+			currentLocation(player) {
+		    	return this.cells.indexOf(player) + 1; // Our cell ID's start at 1
+		    },
+			isLegalMove(player, newLocation) {
+				var location = this.currentLocation(player);
 
-				// contains all (8) possible winning conditions
-				winConditions: [
-					[1, 2, 3], [4, 5, 6], [7, 8, 9], // rows
-					[1, 4, 7], [2, 5, 8], [3, 6, 9], // columns
-					[1, 5, 9], [3, 5, 7]             // diagonals
-				]
+				console.log("Current location: " + location + " New location: " + newLocation)
+
+				// If player is along the left side of the board, they cannot move left.
+				console.log("Left side check (true when 0): " + (location - 1) % 9);
+				if ((location - 1) % 9 === 0
+					&& newLocation === location - 1)
+					return false;
+
+				// If player is along the right side of the board, they cannot move right.
+				console.log("Right side check (true when 0): " + location % 9 == 0);
+				if (location % 9 == 0
+					&& newLocation === location + 1)
+					return false;
+
+				// If player is along the top of the board, they cannot move up. It's enough to check if they're trying to move to a location before the start of the board.
+				if (newLocation < 1)
+					return false;
+
+				// If player is along the bottom of the board, they cannot move down. It's enough to check if they're moving to a location after the bottom edge of the board.
+				if (newLocation > 81)
+					return false;
+
+				// #MoreTime - the final fall through should return true, sit down and reverse this boolean.
+				// Else, the move is legal as long as the pawn is only moving one square at a time.
+				console.log("Checking whether move is legal. Math.abs(location - newLocation) = " + Math.abs(location - newLocation) + " (we expect 1). Math.abs(location - newLocation) = " + Math.abs(location - newLocation) + " (we expect 9).");
+				if (Math.abs(location - newLocation) === 1
+					|| Math.abs(location - newLocation) === 9)
+				{
+				console.log("Move is legal.")
+					return true;
+				}
+
+				console.log("Didn't try to move past edge of board, but the move is still illegal.")
+				return false;
 			}
 		},
 		components: {
 			'quoridor-cell': QuoridorCell
-		}
+		},
+		computed: {
+		    // helper property to get the non-active player
+		    nonActivePlayer() {
+		        if (this.activePlayer === 'O') {
 
+		            return 'X';
+		        }
+
+		        return 'O';
+		    }
+		},
+		created() {
+			// listens for a strike made by the user on cell
+			// it is called by the Cell component
+			Event.$on('strike', (cellNumber) => {
+		        if (this.isLegalMove(this.activePlayer, cellNumber)) {
+		        	console.log("Current player: " + this.activePlayer);
+		        	console.log("Player O position: " + this.currentLocation("O"));
+		        	console.log("Player X position: " + this.currentLocation("X"));
+		        	console.log(this.cells)
+		        	console.log("Current player position: " + this.currentLocation(this.activePlayer))
+		        	console.log(this.$children);
+		        	this.$children[this.currentLocation(this.activePlayer)-1].clear();
+		        	this.cells[this.currentLocation(this.activePlayer)-1] = '';
+
+
+			        // sets either X or O in the clicked cell of the cells array
+			        this.$children[cellNumber - 1].set(this.activePlayer);
+			        this.cells[cellNumber - 1] = this.activePlayer;
+
+
+			        // increments the number of moves
+			        this.moves++;
+
+			        // stores the game status by calling the changeGameStatus method
+			        //this.gameStatus = this.changeGameStatus();
+			    }
+			});
+		},
+		mounted() {
+			this.$children[4].set("O");
+			this.$children[76].set("X");
+			this.cells[4] = "O"
+			this.cells[76] = "X";
+		}
 	}
 </script>
 
@@ -161,10 +245,10 @@
 	}
 
 	.gameStatus {
-	margin: 0px;
-	padding: 15px;
-	border-top-left-radius: 20px;
-	border-top-right-radius: 20px;
+	margin: 0;
+	padding: 15;
+	border-top-left-radius: 20;
+	border-top-right-radius: 20;
 	background-color: #f1c40f;
 	color: #fff;
 	font-size: 1.4em;

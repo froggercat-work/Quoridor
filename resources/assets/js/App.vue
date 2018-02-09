@@ -44,7 +44,7 @@
 	}
 	#app {
 	margin: 0 auto;
-	max-width: 100%;
+	max-width: 70%;
 	max-height: 80%;
 	color: #34495e;
 	}

@@ -17,6 +17,8 @@ window.Vue = require('vue');
 
 Vue.component('app', require('./App.vue'));
 
+window.Event = new Vue();
+
 const app = new Vue({
     el: '#app'
 });
