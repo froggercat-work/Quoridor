@@ -142,6 +142,7 @@
 			},
 			changePlayer() {
 				this.activePlayer = this.nonActivePlayer;
+				this.frozen = false;
 			},
 			currentLocation(player) {
 		    	return this.cells.indexOf(player) + 1; // Our cell ID's start at 1
@@ -203,31 +204,34 @@
 			// listens for a strike made by the user on cell
 			// it is called by the Cell component
 			Event.$on('strike', (cellNumber) => {
-		        if (this.isLegalMove(this.activePlayer, cellNumber)) {
-		        	console.log("Current player: " + this.activePlayer);
-		        	console.log("Player O position: " + this.currentLocation("O"));
-		        	console.log("Player X position: " + this.currentLocation("X"));
-		        	console.log(this.cells)
-		        	console.log("Current player position: " + this.currentLocation(this.activePlayer))
-		        	console.log(this.$children);
-		        	this.$children[this.currentLocation(this.activePlayer)-1].clear();
-		        	this.cells[this.currentLocation(this.activePlayer)-1] = '';
+				console.log("Board frozen? " + this.frozen);
+				if (this.frozen
+					|| !this.isLegalMove(this.activePlayer, cellNumber))
+				{
+					console.log("You cannot move.");
+					return;
+				}
+				
+	        	this.$children[this.currentLocation(this.activePlayer)-1].clear();
+	        	this.cells[this.currentLocation(this.activePlayer)-1] = '';
 
 
-			        // sets either X or O in the clicked cell of the cells array
-			        this.$children[cellNumber - 1].set(this.activePlayer);
-			        this.cells[cellNumber - 1] = this.activePlayer;
+		        // sets either X or O in the clicked cell of the cells array
+		        this.$children[cellNumber - 1].set(this.activePlayer);
+		        this.cells[cellNumber - 1] = this.activePlayer;
 
 
-			        // increments the number of moves
-			        this.moves++;
+		        // increments the number of moves
+		        this.moves++;
 
-			        // stores the game status by calling the changeGameStatus method
-			        //this.gameStatus = this.changeGameStatus();
-			    }
+		        // stores the game status by calling the changeGameStatus method
+		        //this.gameStatus = this.changeGameStatus();
+
+		        this.frozen = true;
 			});
 		},
 		mounted() {
+			// Sets the intial pawn positions.
 			this.$children[4].set("O");
 			this.$children[76].set("X");
 			this.cells[4] = "O"

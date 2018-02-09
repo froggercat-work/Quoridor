@@ -47702,6 +47702,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 		},
 		changePlayer: function changePlayer() {
 			this.activePlayer = this.nonActivePlayer;
+			this.frozen = false;
 		},
 		currentLocation: function currentLocation(player) {
 			return this.cells.indexOf(player) + 1; // Our cell ID's start at 1
@@ -47757,29 +47758,30 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 		// listens for a strike made by the user on cell
 		// it is called by the Cell component
 		Event.$on('strike', function (cellNumber) {
-			if (_this.isLegalMove(_this.activePlayer, cellNumber)) {
-				console.log("Current player: " + _this.activePlayer);
-				console.log("Player O position: " + _this.currentLocation("O"));
-				console.log("Player X position: " + _this.currentLocation("X"));
-				console.log(_this.cells);
-				console.log("Current player position: " + _this.currentLocation(_this.activePlayer));
-				console.log(_this.$children);
-				_this.$children[_this.currentLocation(_this.activePlayer) - 1].clear();
-				_this.cells[_this.currentLocation(_this.activePlayer) - 1] = '';
-
-				// sets either X or O in the clicked cell of the cells array
-				_this.$children[cellNumber - 1].set(_this.activePlayer);
-				_this.cells[cellNumber - 1] = _this.activePlayer;
-
-				// increments the number of moves
-				_this.moves++;
-
-				// stores the game status by calling the changeGameStatus method
-				//this.gameStatus = this.changeGameStatus();
+			console.log("Board frozen? " + _this.frozen);
+			if (_this.frozen || !_this.isLegalMove(_this.activePlayer, cellNumber)) {
+				console.log("You cannot move.");
+				return;
 			}
+
+			_this.$children[_this.currentLocation(_this.activePlayer) - 1].clear();
+			_this.cells[_this.currentLocation(_this.activePlayer) - 1] = '';
+
+			// sets either X or O in the clicked cell of the cells array
+			_this.$children[cellNumber - 1].set(_this.activePlayer);
+			_this.cells[cellNumber - 1] = _this.activePlayer;
+
+			// increments the number of moves
+			_this.moves++;
+
+			// stores the game status by calling the changeGameStatus method
+			//this.gameStatus = this.changeGameStatus();
+
+			_this.frozen = true;
 		});
 	},
 	mounted: function mounted() {
+		// Sets the intial pawn positions.
 		this.$children[4].set("O");
 		this.$children[76].set("X");
 		this.cells[4] = "O";
