@@ -3,7 +3,7 @@
 		<div>
 			{{ informationMessage }}
 		</div>
-		<div class="gameStatus" v-bind:class="gameStatusColor" @click="finishTurn">
+		<div class="gameStatus" v-bind:class="gameStatusColor">
 		    {{ gameStatusMessage }}
 		</div>
 		<table class="grid">
@@ -435,38 +435,22 @@
 
 		    	// First determine direction. If going left-right, we need to check for vertical walls.
 		    	if (Math.abs(location - newLocation) === 1) {
-		    		console.log("Moving horizontally. Checking for vertical walls.")
 		    		for (let i = 0; i < this.verticalWalls.length; i++) {
 		    			// If the wall array isn't populated, there isn't a wall here, go on
 			    		if(this.verticalWalls[i] === '')
 			    			continue;
 
 			    		verticalWallIndexes.push(i); // for logging
-			    		console.log("Found vertical wall at index", i);
 			    		// Remember, there are only 8 vertical walls per row.
-			    		console.log("First check that the wall is in the same row as the current location.");
-			    		console.log("if(Math.floor(i/8) !== Math.floor(arrayLocation/9)) continue;");
-			    		console.log("Math.floor(i/8) =", Math.floor(i/8)) 
-			    		console.log("Math.floor(arrayLocation/9) =", Math.floor(arrayLocation/9));
 			    		// First check that the wall is in the same row as the current location.
 			    		if(Math.floor(i/8) !== Math.floor(arrayLocation/9))
 			    			continue;
 
-			    		console.log("Check that the wall is directly right of the current location, and that we're moving right. (If we're moving left, a wall to our right doesn't block.)");
-			    		console.log("if(i % 8 === arrayLocation % 9 && newLocation - location === 1) return true;");
-			    		console.log("i % 8 =",i % 8);
-			    		console.log("arraryLocation % 9 =", arrayLocation % 9);
-			    		console.log("newLocation - location =", newLocation - location);
 			    		// Check that the wall is directly right of the current location, and that we're moving right. (If we're moving left, a wall to our right doesn't block.)
 			    		if(i % 8 === arrayLocation % 9
 			    			&& newLocation - location === 1)
 			    			return true;
 
-			    		console.log("Check that the wall is directly left us, and that we're moving left.");
-			    		console.log("if(i % 8 + 1 === arrayLocation % 9 && location - newLocation === 1) return true;");
-			    		console.log("i % 8 + 1 =",i % 8 + 1);
-			    		console.log("arrayLocation % 9 =",arrayLocation % 9);
-			    		console.log("location - newLocation", location - newLocation);
 			    		// Check that the wall is directly left us, and that we're moving left.
 			    		if(i % 8 + 1 === arrayLocation % 9 
 			    			&& location - newLocation === 1)
@@ -478,7 +462,6 @@
 		    		return false;
 		    	}
 		    	// Else, we must be traveling vertically, so check for horizontal walls blocking the path.
-	    		console.log("Moving vertically. Checking for horizontal walls.")
 		    	for (let i = 0; i < this.horizontalWalls.length; i++) {
 		    		// If the wall array isn't populated, there isn't a wall here, go on
 		    		if(this.horizontalWalls[i] === '')
@@ -502,8 +485,6 @@
 
 		    		// If we're here, that means the wall is in the same column but isn't blocking our path, so continue.
 		    	}
-
-		    	console.log("Current location:", location, "New Location:", newLocation, "Horizontal Walls:", horizontalWallIndexes, "Vertical Walls:", verticalWallIndexes);
 
 		    	// If we made it here, there are no walls to block this move.
 		    	return false;
@@ -596,7 +577,7 @@
 
 		        this.frozen = true;
 
-		        // this.updateComponents();
+		        this.changePlayer();
 			});
 			Event.$on('strikeWall', (wallNumber, isVertical) => {
 				if (this.frozen) {
@@ -619,6 +600,12 @@
 
 					else pairedWallNumber = parseInt(wallNumber) + 8;
 
+					if(this.verticalWalls[wallNumber - 1] != ''
+						&& this.verticalWalls[pairedWallNumber - 1] != '') {
+						this.informationMessage = "There is already a wall here."
+						return;
+					}
+
 					this.verticalWalls[wallNumber - 1] = this.verticalWalls[pairedWallNumber - 1] = this.activePlayer;
 
 					this.verticalWallComponents[wallNumber - 1].set(this.activePlayer);
@@ -632,6 +619,12 @@
 
 					else pairedWallNumber = parseInt(wallNumber) + 1;
 
+					if(this.horizontalWalls[wallNumber - 1] != ''
+						&& this.horizontalWalls[pairedWallNumber - 1] != '') {
+						this.informationMessage = "There is already a wall here."
+						return;
+					}
+
 					this.horizontalWalls[wallNumber - 1] = this.horizontalWalls[pairedWallNumber - 1] = this.activePlayer;
 
 					this.horizontalWallComponents[wallNumber -1].set(this.activePlayer);
@@ -644,6 +637,8 @@
 				this.informationMessage = "Player " + this.activePlayer + ", you have " + this.availableWalls[this.activePlayer] + " walls remaining."
 
 				this.frozen = true;
+
+				this.changePlayer();
 			});
 		},
 		mounted() {
@@ -691,8 +686,8 @@
 	}
 
 	.statusTurn:hover {
-		background-color: #d9b00d; 
-		cursor: pointer;
+		/*background-color: #d9b00d; 
+		cursor: pointer;*/
 	}
 
 	.statusWin {
