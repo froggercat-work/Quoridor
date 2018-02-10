@@ -34,61 +34,61 @@
 
 <style>
 	body {
-	background-color: #fff;
-	color: #fff;
-	font-family: 'Dosis', Helvetica, sans-serif;
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
-	text-align: center;
-	margin: 0px;
+		background-color: #fff;
+		color: #fff;
+		font-family: 'Dosis', Helvetica, sans-serif;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+		text-align: center;
+		margin: 0px;
 	}
 	#app {
-	margin: 0 auto;
-	max-width: 70%;
-	max-height: 80%;
-	color: #34495e;
+		margin: 0 auto;
+		max-width: 100%;
+		max-height: 100%;
+		color: #34495e;
 	}
 	h1 {
-	text-transform: uppercase;
-	font-weight: bold;
-	font-size: 3em;
+		text-transform: uppercase;
+		font-weight: bold;
+		font-size: 5vw;
 	}
 	.restart {
-	background-color: #e74c3c;
-	color: #fff;
-	border: 0px;
-	border-bottom-left-radius: 10px;
-	border-bottom-right-radius: 10px;
-	font-family: 'Dosis', Helvetica, sans-serif;
-	font-size: 1.4em;
-	font-weight: bold;
-	margin: 0px;
-	padding: 15px;
-	width: 100%;
+		background-color: #e74c3c;
+		color: #fff;
+		border: 0px;
+		border-bottom-left-radius: 10px;
+		border-bottom-right-radius: 10px;
+		font-family: 'Dosis', Helvetica, sans-serif;
+		font-size: 3vw;
+		font-weight: bold;
+		margin: 0px;
+		padding: 15px;
+		width: 100%;
 	}
 	.restart:hover {
-	background-color: #c0392b;
-	cursor: pointer;
+		background-color: #c0392b;
+		cursor: pointer;
 	}
 	.scoreBoard {
-	display: flex;
-	flex-direction: row;
-	justify-content: space-around;
-	align-items: center;
-	width: 100%;
-	height: 15px;
-	background-color: #16a085;
-	box-shadow: 10px solid #fff;
-	padding: 20px;
-	overflow-x: none;
+		display: flex;
+		flex-direction: row;
+		justify-content: space-around;
+		align-items: center;
+		width: 100%;
+		height: 4vw;
+		background-color: #16a085;
+		/*box-shadow: 10px solid #fff;*/
+		padding: 2.5vw;
+		overflow-x: none;
 	}
 	.scoreBoard h2 {
-	margin: 0px;
+		margin: 0px;
 	}
 	.scoreBoard span {
-	float: right;
-	font-size: 1.5em;
-	font-weight: bold;
-	margin-left: 20px;
+		float: right;
+		font-size: 3vw;
+		font-weight: bold;
+		margin-left: 20px;
 	}
 </style>

@@ -7,11 +7,8 @@
         props: ['name'],
 		data () {
 		    return {
-		     // enables the player to place a mark
-		     frozen: false,
-
-	        // holds either X or O to be displayed in the td
-	        mark: ''
+				// holds either X or O to be displayed in the td
+				mark: ''
 		    }    
 		},
 		methods: {
@@ -22,7 +19,7 @@
 				this.mark = "";
 			},
 			strike() {
-				Event.$emit("strike", this.name)
+				Event.$emit("strikeCell", this.name)
 			}
 		}
 	}
@@ -30,38 +27,21 @@
 
 <style>
 	.cell {
-	  width: 5vw;
-	  height: 5vw;
-	  border: 6px solid #2c3e50;
-	  font-size: 4vw;
-	  font-family: 'Gochi Hand', sans-serif;
+		width: 4vw;
+		height: 4vw;
+		background-color: #34495e;
+		border: 6px solid #2c3e50;
+		font-size: 3.25vw; /* So you don't see re-sizing artifacts when moving pawn. */
+		font-family: 'Gochi Hand', sans-serif;
 	}
 
 	.cell:hover {
-	    background-color: #7f8c8d;
+		background-color: #7f8c8d;
 	}
 
 	.cell::after {
-	  content: '';
-	  display: block;
-	}
-
-	.cell:first-of-type {
-	  /*border-left-color: transparent;*/
-	  /*border-top-color: transparent;*/
-	}
-
-	.cell:nth-of-type(2) {
-	  /*border-top-color: transparent;*/
-	}
-
-	.cell:nth-of-type(9) {
-	  /*border-right-color: transparent;*/
-	  /*border-top-color: transparent;*/
-	}
-
-	tr:nth-of-type(9) .cell {
-	  /*border-bottom-color: transparent;*/
+		content: '';
+		display: block;
 	}
 
 </style>

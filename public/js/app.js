@@ -70,7 +70,7 @@
 "use strict";
 
 
-var bind = __webpack_require__(5);
+var bind = __webpack_require__(8);
 var isBuffer = __webpack_require__(22);
 
 /*global toString:true*/
@@ -424,10 +424,10 @@ function getDefaultAdapter() {
   var adapter;
   if (typeof XMLHttpRequest !== 'undefined') {
     // For browsers use XHR adapter
-    adapter = __webpack_require__(7);
+    adapter = __webpack_require__(10);
   } else if (typeof process !== 'undefined') {
     // For node use HTTP adapter
-    adapter = __webpack_require__(7);
+    adapter = __webpack_require__(10);
   }
   return adapter;
 }
@@ -498,10 +498,429 @@ utils.forEach(['post', 'put', 'patch'], function forEachMethodWithData(method) {
 
 module.exports = defaults;
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(6)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(9)))
 
 /***/ }),
 /* 3 */
+/***/ (function(module, exports) {
+
+/*
+	MIT License http://www.opensource.org/licenses/mit-license.php
+	Author Tobias Koppers @sokra
+*/
+// css base code, injected by the css-loader
+module.exports = function(useSourceMap) {
+	var list = [];
+
+	// return the list of modules as css string
+	list.toString = function toString() {
+		return this.map(function (item) {
+			var content = cssWithMappingToString(item, useSourceMap);
+			if(item[2]) {
+				return "@media " + item[2] + "{" + content + "}";
+			} else {
+				return content;
+			}
+		}).join("");
+	};
+
+	// import a list of modules into the list
+	list.i = function(modules, mediaQuery) {
+		if(typeof modules === "string")
+			modules = [[null, modules, ""]];
+		var alreadyImportedModules = {};
+		for(var i = 0; i < this.length; i++) {
+			var id = this[i][0];
+			if(typeof id === "number")
+				alreadyImportedModules[id] = true;
+		}
+		for(i = 0; i < modules.length; i++) {
+			var item = modules[i];
+			// skip already imported module
+			// this implementation is not 100% perfect for weird media query combinations
+			//  when a module is imported multiple times with different media queries.
+			//  I hope this will never occur (Hey this way we have smaller bundles)
+			if(typeof item[0] !== "number" || !alreadyImportedModules[item[0]]) {
+				if(mediaQuery && !item[2]) {
+					item[2] = mediaQuery;
+				} else if(mediaQuery) {
+					item[2] = "(" + item[2] + ") and (" + mediaQuery + ")";
+				}
+				list.push(item);
+			}
+		}
+	};
+	return list;
+};
+
+function cssWithMappingToString(item, useSourceMap) {
+	var content = item[1] || '';
+	var cssMapping = item[3];
+	if (!cssMapping) {
+		return content;
+	}
+
+	if (useSourceMap && typeof btoa === 'function') {
+		var sourceMapping = toComment(cssMapping);
+		var sourceURLs = cssMapping.sources.map(function (source) {
+			return '/*# sourceURL=' + cssMapping.sourceRoot + source + ' */'
+		});
+
+		return [content].concat(sourceURLs).concat([sourceMapping]).join('\n');
+	}
+
+	return [content].join('\n');
+}
+
+// Adapted from convert-source-map (MIT)
+function toComment(sourceMap) {
+	// eslint-disable-next-line no-undef
+	var base64 = btoa(unescape(encodeURIComponent(JSON.stringify(sourceMap))));
+	var data = 'sourceMappingURL=data:application/json;charset=utf-8;base64,' + base64;
+
+	return '/*# ' + data + ' */';
+}
+
+
+/***/ }),
+/* 4 */
+/***/ (function(module, exports, __webpack_require__) {
+
+/*
+  MIT License http://www.opensource.org/licenses/mit-license.php
+  Author Tobias Koppers @sokra
+  Modified by Evan You @yyx990803
+*/
+
+var hasDocument = typeof document !== 'undefined'
+
+if (typeof DEBUG !== 'undefined' && DEBUG) {
+  if (!hasDocument) {
+    throw new Error(
+    'vue-style-loader cannot be used in a non-browser environment. ' +
+    "Use { target: 'node' } in your Webpack config to indicate a server-rendering environment."
+  ) }
+}
+
+var listToStyles = __webpack_require__(45)
+
+/*
+type StyleObject = {
+  id: number;
+  parts: Array<StyleObjectPart>
+}
+
+type StyleObjectPart = {
+  css: string;
+  media: string;
+  sourceMap: ?string
+}
+*/
+
+var stylesInDom = {/*
+  [id: number]: {
+    id: number,
+    refs: number,
+    parts: Array<(obj?: StyleObjectPart) => void>
+  }
+*/}
+
+var head = hasDocument && (document.head || document.getElementsByTagName('head')[0])
+var singletonElement = null
+var singletonCounter = 0
+var isProduction = false
+var noop = function () {}
+var options = null
+var ssrIdKey = 'data-vue-ssr-id'
+
+// Force single-tag solution on IE6-9, which has a hard limit on the # of <style>
+// tags it will allow on a page
+var isOldIE = typeof navigator !== 'undefined' && /msie [6-9]\b/.test(navigator.userAgent.toLowerCase())
+
+module.exports = function (parentId, list, _isProduction, _options) {
+  isProduction = _isProduction
+
+  options = _options || {}
+
+  var styles = listToStyles(parentId, list)
+  addStylesToDom(styles)
+
+  return function update (newList) {
+    var mayRemove = []
+    for (var i = 0; i < styles.length; i++) {
+      var item = styles[i]
+      var domStyle = stylesInDom[item.id]
+      domStyle.refs--
+      mayRemove.push(domStyle)
+    }
+    if (newList) {
+      styles = listToStyles(parentId, newList)
+      addStylesToDom(styles)
+    } else {
+      styles = []
+    }
+    for (var i = 0; i < mayRemove.length; i++) {
+      var domStyle = mayRemove[i]
+      if (domStyle.refs === 0) {
+        for (var j = 0; j < domStyle.parts.length; j++) {
+          domStyle.parts[j]()
+        }
+        delete stylesInDom[domStyle.id]
+      }
+    }
+  }
+}
+
+function addStylesToDom (styles /* Array<StyleObject> */) {
+  for (var i = 0; i < styles.length; i++) {
+    var item = styles[i]
+    var domStyle = stylesInDom[item.id]
+    if (domStyle) {
+      domStyle.refs++
+      for (var j = 0; j < domStyle.parts.length; j++) {
+        domStyle.parts[j](item.parts[j])
+      }
+      for (; j < item.parts.length; j++) {
+        domStyle.parts.push(addStyle(item.parts[j]))
+      }
+      if (domStyle.parts.length > item.parts.length) {
+        domStyle.parts.length = item.parts.length
+      }
+    } else {
+      var parts = []
+      for (var j = 0; j < item.parts.length; j++) {
+        parts.push(addStyle(item.parts[j]))
+      }
+      stylesInDom[item.id] = { id: item.id, refs: 1, parts: parts }
+    }
+  }
+}
+
+function createStyleElement () {
+  var styleElement = document.createElement('style')
+  styleElement.type = 'text/css'
+  head.appendChild(styleElement)
+  return styleElement
+}
+
+function addStyle (obj /* StyleObjectPart */) {
+  var update, remove
+  var styleElement = document.querySelector('style[' + ssrIdKey + '~="' + obj.id + '"]')
+
+  if (styleElement) {
+    if (isProduction) {
+      // has SSR styles and in production mode.
+      // simply do nothing.
+      return noop
+    } else {
+      // has SSR styles but in dev mode.
+      // for some reason Chrome can't handle source map in server-rendered
+      // style tags - source maps in <style> only works if the style tag is
+      // created and inserted dynamically. So we remove the server rendered
+      // styles and inject new ones.
+      styleElement.parentNode.removeChild(styleElement)
+    }
+  }
+
+  if (isOldIE) {
+    // use singleton mode for IE9.
+    var styleIndex = singletonCounter++
+    styleElement = singletonElement || (singletonElement = createStyleElement())
+    update = applyToSingletonTag.bind(null, styleElement, styleIndex, false)
+    remove = applyToSingletonTag.bind(null, styleElement, styleIndex, true)
+  } else {
+    // use multi-style-tag mode in all other cases
+    styleElement = createStyleElement()
+    update = applyToTag.bind(null, styleElement)
+    remove = function () {
+      styleElement.parentNode.removeChild(styleElement)
+    }
+  }
+
+  update(obj)
+
+  return function updateStyle (newObj /* StyleObjectPart */) {
+    if (newObj) {
+      if (newObj.css === obj.css &&
+          newObj.media === obj.media &&
+          newObj.sourceMap === obj.sourceMap) {
+        return
+      }
+      update(obj = newObj)
+    } else {
+      remove()
+    }
+  }
+}
+
+var replaceText = (function () {
+  var textStore = []
+
+  return function (index, replacement) {
+    textStore[index] = replacement
+    return textStore.filter(Boolean).join('\n')
+  }
+})()
+
+function applyToSingletonTag (styleElement, index, remove, obj) {
+  var css = remove ? '' : obj.css
+
+  if (styleElement.styleSheet) {
+    styleElement.styleSheet.cssText = replaceText(index, css)
+  } else {
+    var cssNode = document.createTextNode(css)
+    var childNodes = styleElement.childNodes
+    if (childNodes[index]) styleElement.removeChild(childNodes[index])
+    if (childNodes.length) {
+      styleElement.insertBefore(cssNode, childNodes[index])
+    } else {
+      styleElement.appendChild(cssNode)
+    }
+  }
+}
+
+function applyToTag (styleElement, obj) {
+  var css = obj.css
+  var media = obj.media
+  var sourceMap = obj.sourceMap
+
+  if (media) {
+    styleElement.setAttribute('media', media)
+  }
+  if (options.ssrId) {
+    styleElement.setAttribute(ssrIdKey, obj.id)
+  }
+
+  if (sourceMap) {
+    // https://developer.chrome.com/devtools/docs/javascript-debugging
+    // this makes source maps inside style tags work properly in Chrome
+    css += '\n/*# sourceURL=' + sourceMap.sources[0] + ' */'
+    // http://stackoverflow.com/a/26603875
+    css += '\n/*# sourceMappingURL=data:application/json;base64,' + btoa(unescape(encodeURIComponent(JSON.stringify(sourceMap)))) + ' */'
+  }
+
+  if (styleElement.styleSheet) {
+    styleElement.styleSheet.cssText = css
+  } else {
+    while (styleElement.firstChild) {
+      styleElement.removeChild(styleElement.firstChild)
+    }
+    styleElement.appendChild(document.createTextNode(css))
+  }
+}
+
+
+/***/ }),
+/* 5 */
+/***/ (function(module, exports) {
+
+/* globals __VUE_SSR_CONTEXT__ */
+
+// IMPORTANT: Do NOT use ES2015 features in this file.
+// This module is a runtime utility for cleaner component module output and will
+// be included in the final webpack user bundle.
+
+module.exports = function normalizeComponent (
+  rawScriptExports,
+  compiledTemplate,
+  functionalTemplate,
+  injectStyles,
+  scopeId,
+  moduleIdentifier /* server only */
+) {
+  var esModule
+  var scriptExports = rawScriptExports = rawScriptExports || {}
+
+  // ES6 modules interop
+  var type = typeof rawScriptExports.default
+  if (type === 'object' || type === 'function') {
+    esModule = rawScriptExports
+    scriptExports = rawScriptExports.default
+  }
+
+  // Vue.extend constructor export interop
+  var options = typeof scriptExports === 'function'
+    ? scriptExports.options
+    : scriptExports
+
+  // render functions
+  if (compiledTemplate) {
+    options.render = compiledTemplate.render
+    options.staticRenderFns = compiledTemplate.staticRenderFns
+    options._compiled = true
+  }
+
+  // functional template
+  if (functionalTemplate) {
+    options.functional = true
+  }
+
+  // scopedId
+  if (scopeId) {
+    options._scopeId = scopeId
+  }
+
+  var hook
+  if (moduleIdentifier) { // server build
+    hook = function (context) {
+      // 2.3 injection
+      context =
+        context || // cached call
+        (this.$vnode && this.$vnode.ssrContext) || // stateful
+        (this.parent && this.parent.$vnode && this.parent.$vnode.ssrContext) // functional
+      // 2.2 with runInNewContext: true
+      if (!context && typeof __VUE_SSR_CONTEXT__ !== 'undefined') {
+        context = __VUE_SSR_CONTEXT__
+      }
+      // inject component styles
+      if (injectStyles) {
+        injectStyles.call(this, context)
+      }
+      // register component module identifier for async chunk inferrence
+      if (context && context._registeredComponents) {
+        context._registeredComponents.add(moduleIdentifier)
+      }
+    }
+    // used by ssr in case component is cached and beforeCreate
+    // never gets called
+    options._ssrRegister = hook
+  } else if (injectStyles) {
+    hook = injectStyles
+  }
+
+  if (hook) {
+    var functional = options.functional
+    var existing = functional
+      ? options.render
+      : options.beforeCreate
+
+    if (!functional) {
+      // inject component registration as beforeCreate hook
+      options.beforeCreate = existing
+        ? [].concat(existing, hook)
+        : [hook]
+    } else {
+      // for template-only hot-reload because in that case the render fn doesn't
+      // go through the normalizer
+      options._injectStyles = hook
+      // register for functioal component in vue file
+      options.render = function renderWithStyleInjection (h, context) {
+        hook.call(context)
+        return existing(h, context)
+      }
+    }
+  }
+
+  return {
+    esModule: esModule,
+    exports: scriptExports,
+    options: options
+  }
+}
+
+
+/***/ }),
+/* 6 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -2947,7 +3366,7 @@ Popper.Defaults = Defaults;
 /* WEBPACK VAR INJECTION */}.call(__webpack_exports__, __webpack_require__(1)))
 
 /***/ }),
-/* 4 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
@@ -13318,7 +13737,7 @@ return jQuery;
 
 
 /***/ }),
-/* 5 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -13336,7 +13755,7 @@ module.exports = function bind(fn, thisArg) {
 
 
 /***/ }),
-/* 6 */
+/* 9 */
 /***/ (function(module, exports) {
 
 // shim for using process in browser
@@ -13526,7 +13945,7 @@ process.umask = function() { return 0; };
 
 
 /***/ }),
-/* 7 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -13537,7 +13956,7 @@ var settle = __webpack_require__(25);
 var buildURL = __webpack_require__(27);
 var parseHeaders = __webpack_require__(28);
 var isURLSameOrigin = __webpack_require__(29);
-var createError = __webpack_require__(8);
+var createError = __webpack_require__(11);
 var btoa = (typeof window !== 'undefined' && window.btoa && window.btoa.bind(window)) || __webpack_require__(30);
 
 module.exports = function xhrAdapter(config) {
@@ -13713,7 +14132,7 @@ module.exports = function xhrAdapter(config) {
 
 
 /***/ }),
-/* 8 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -13738,7 +14157,7 @@ module.exports = function createError(message, config, code, request, response) 
 
 
 /***/ }),
-/* 9 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -13750,7 +14169,7 @@ module.exports = function isCancel(value) {
 
 
 /***/ }),
-/* 10 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -13776,430 +14195,11 @@ module.exports = Cancel;
 
 
 /***/ }),
-/* 11 */
-/***/ (function(module, exports) {
-
-/*
-	MIT License http://www.opensource.org/licenses/mit-license.php
-	Author Tobias Koppers @sokra
-*/
-// css base code, injected by the css-loader
-module.exports = function(useSourceMap) {
-	var list = [];
-
-	// return the list of modules as css string
-	list.toString = function toString() {
-		return this.map(function (item) {
-			var content = cssWithMappingToString(item, useSourceMap);
-			if(item[2]) {
-				return "@media " + item[2] + "{" + content + "}";
-			} else {
-				return content;
-			}
-		}).join("");
-	};
-
-	// import a list of modules into the list
-	list.i = function(modules, mediaQuery) {
-		if(typeof modules === "string")
-			modules = [[null, modules, ""]];
-		var alreadyImportedModules = {};
-		for(var i = 0; i < this.length; i++) {
-			var id = this[i][0];
-			if(typeof id === "number")
-				alreadyImportedModules[id] = true;
-		}
-		for(i = 0; i < modules.length; i++) {
-			var item = modules[i];
-			// skip already imported module
-			// this implementation is not 100% perfect for weird media query combinations
-			//  when a module is imported multiple times with different media queries.
-			//  I hope this will never occur (Hey this way we have smaller bundles)
-			if(typeof item[0] !== "number" || !alreadyImportedModules[item[0]]) {
-				if(mediaQuery && !item[2]) {
-					item[2] = mediaQuery;
-				} else if(mediaQuery) {
-					item[2] = "(" + item[2] + ") and (" + mediaQuery + ")";
-				}
-				list.push(item);
-			}
-		}
-	};
-	return list;
-};
-
-function cssWithMappingToString(item, useSourceMap) {
-	var content = item[1] || '';
-	var cssMapping = item[3];
-	if (!cssMapping) {
-		return content;
-	}
-
-	if (useSourceMap && typeof btoa === 'function') {
-		var sourceMapping = toComment(cssMapping);
-		var sourceURLs = cssMapping.sources.map(function (source) {
-			return '/*# sourceURL=' + cssMapping.sourceRoot + source + ' */'
-		});
-
-		return [content].concat(sourceURLs).concat([sourceMapping]).join('\n');
-	}
-
-	return [content].join('\n');
-}
-
-// Adapted from convert-source-map (MIT)
-function toComment(sourceMap) {
-	// eslint-disable-next-line no-undef
-	var base64 = btoa(unescape(encodeURIComponent(JSON.stringify(sourceMap))));
-	var data = 'sourceMappingURL=data:application/json;charset=utf-8;base64,' + base64;
-
-	return '/*# ' + data + ' */';
-}
-
-
-/***/ }),
-/* 12 */
-/***/ (function(module, exports, __webpack_require__) {
-
-/*
-  MIT License http://www.opensource.org/licenses/mit-license.php
-  Author Tobias Koppers @sokra
-  Modified by Evan You @yyx990803
-*/
-
-var hasDocument = typeof document !== 'undefined'
-
-if (typeof DEBUG !== 'undefined' && DEBUG) {
-  if (!hasDocument) {
-    throw new Error(
-    'vue-style-loader cannot be used in a non-browser environment. ' +
-    "Use { target: 'node' } in your Webpack config to indicate a server-rendering environment."
-  ) }
-}
-
-var listToStyles = __webpack_require__(45)
-
-/*
-type StyleObject = {
-  id: number;
-  parts: Array<StyleObjectPart>
-}
-
-type StyleObjectPart = {
-  css: string;
-  media: string;
-  sourceMap: ?string
-}
-*/
-
-var stylesInDom = {/*
-  [id: number]: {
-    id: number,
-    refs: number,
-    parts: Array<(obj?: StyleObjectPart) => void>
-  }
-*/}
-
-var head = hasDocument && (document.head || document.getElementsByTagName('head')[0])
-var singletonElement = null
-var singletonCounter = 0
-var isProduction = false
-var noop = function () {}
-var options = null
-var ssrIdKey = 'data-vue-ssr-id'
-
-// Force single-tag solution on IE6-9, which has a hard limit on the # of <style>
-// tags it will allow on a page
-var isOldIE = typeof navigator !== 'undefined' && /msie [6-9]\b/.test(navigator.userAgent.toLowerCase())
-
-module.exports = function (parentId, list, _isProduction, _options) {
-  isProduction = _isProduction
-
-  options = _options || {}
-
-  var styles = listToStyles(parentId, list)
-  addStylesToDom(styles)
-
-  return function update (newList) {
-    var mayRemove = []
-    for (var i = 0; i < styles.length; i++) {
-      var item = styles[i]
-      var domStyle = stylesInDom[item.id]
-      domStyle.refs--
-      mayRemove.push(domStyle)
-    }
-    if (newList) {
-      styles = listToStyles(parentId, newList)
-      addStylesToDom(styles)
-    } else {
-      styles = []
-    }
-    for (var i = 0; i < mayRemove.length; i++) {
-      var domStyle = mayRemove[i]
-      if (domStyle.refs === 0) {
-        for (var j = 0; j < domStyle.parts.length; j++) {
-          domStyle.parts[j]()
-        }
-        delete stylesInDom[domStyle.id]
-      }
-    }
-  }
-}
-
-function addStylesToDom (styles /* Array<StyleObject> */) {
-  for (var i = 0; i < styles.length; i++) {
-    var item = styles[i]
-    var domStyle = stylesInDom[item.id]
-    if (domStyle) {
-      domStyle.refs++
-      for (var j = 0; j < domStyle.parts.length; j++) {
-        domStyle.parts[j](item.parts[j])
-      }
-      for (; j < item.parts.length; j++) {
-        domStyle.parts.push(addStyle(item.parts[j]))
-      }
-      if (domStyle.parts.length > item.parts.length) {
-        domStyle.parts.length = item.parts.length
-      }
-    } else {
-      var parts = []
-      for (var j = 0; j < item.parts.length; j++) {
-        parts.push(addStyle(item.parts[j]))
-      }
-      stylesInDom[item.id] = { id: item.id, refs: 1, parts: parts }
-    }
-  }
-}
-
-function createStyleElement () {
-  var styleElement = document.createElement('style')
-  styleElement.type = 'text/css'
-  head.appendChild(styleElement)
-  return styleElement
-}
-
-function addStyle (obj /* StyleObjectPart */) {
-  var update, remove
-  var styleElement = document.querySelector('style[' + ssrIdKey + '~="' + obj.id + '"]')
-
-  if (styleElement) {
-    if (isProduction) {
-      // has SSR styles and in production mode.
-      // simply do nothing.
-      return noop
-    } else {
-      // has SSR styles but in dev mode.
-      // for some reason Chrome can't handle source map in server-rendered
-      // style tags - source maps in <style> only works if the style tag is
-      // created and inserted dynamically. So we remove the server rendered
-      // styles and inject new ones.
-      styleElement.parentNode.removeChild(styleElement)
-    }
-  }
-
-  if (isOldIE) {
-    // use singleton mode for IE9.
-    var styleIndex = singletonCounter++
-    styleElement = singletonElement || (singletonElement = createStyleElement())
-    update = applyToSingletonTag.bind(null, styleElement, styleIndex, false)
-    remove = applyToSingletonTag.bind(null, styleElement, styleIndex, true)
-  } else {
-    // use multi-style-tag mode in all other cases
-    styleElement = createStyleElement()
-    update = applyToTag.bind(null, styleElement)
-    remove = function () {
-      styleElement.parentNode.removeChild(styleElement)
-    }
-  }
-
-  update(obj)
-
-  return function updateStyle (newObj /* StyleObjectPart */) {
-    if (newObj) {
-      if (newObj.css === obj.css &&
-          newObj.media === obj.media &&
-          newObj.sourceMap === obj.sourceMap) {
-        return
-      }
-      update(obj = newObj)
-    } else {
-      remove()
-    }
-  }
-}
-
-var replaceText = (function () {
-  var textStore = []
-
-  return function (index, replacement) {
-    textStore[index] = replacement
-    return textStore.filter(Boolean).join('\n')
-  }
-})()
-
-function applyToSingletonTag (styleElement, index, remove, obj) {
-  var css = remove ? '' : obj.css
-
-  if (styleElement.styleSheet) {
-    styleElement.styleSheet.cssText = replaceText(index, css)
-  } else {
-    var cssNode = document.createTextNode(css)
-    var childNodes = styleElement.childNodes
-    if (childNodes[index]) styleElement.removeChild(childNodes[index])
-    if (childNodes.length) {
-      styleElement.insertBefore(cssNode, childNodes[index])
-    } else {
-      styleElement.appendChild(cssNode)
-    }
-  }
-}
-
-function applyToTag (styleElement, obj) {
-  var css = obj.css
-  var media = obj.media
-  var sourceMap = obj.sourceMap
-
-  if (media) {
-    styleElement.setAttribute('media', media)
-  }
-  if (options.ssrId) {
-    styleElement.setAttribute(ssrIdKey, obj.id)
-  }
-
-  if (sourceMap) {
-    // https://developer.chrome.com/devtools/docs/javascript-debugging
-    // this makes source maps inside style tags work properly in Chrome
-    css += '\n/*# sourceURL=' + sourceMap.sources[0] + ' */'
-    // http://stackoverflow.com/a/26603875
-    css += '\n/*# sourceMappingURL=data:application/json;base64,' + btoa(unescape(encodeURIComponent(JSON.stringify(sourceMap)))) + ' */'
-  }
-
-  if (styleElement.styleSheet) {
-    styleElement.styleSheet.cssText = css
-  } else {
-    while (styleElement.firstChild) {
-      styleElement.removeChild(styleElement.firstChild)
-    }
-    styleElement.appendChild(document.createTextNode(css))
-  }
-}
-
-
-/***/ }),
-/* 13 */
-/***/ (function(module, exports) {
-
-/* globals __VUE_SSR_CONTEXT__ */
-
-// IMPORTANT: Do NOT use ES2015 features in this file.
-// This module is a runtime utility for cleaner component module output and will
-// be included in the final webpack user bundle.
-
-module.exports = function normalizeComponent (
-  rawScriptExports,
-  compiledTemplate,
-  functionalTemplate,
-  injectStyles,
-  scopeId,
-  moduleIdentifier /* server only */
-) {
-  var esModule
-  var scriptExports = rawScriptExports = rawScriptExports || {}
-
-  // ES6 modules interop
-  var type = typeof rawScriptExports.default
-  if (type === 'object' || type === 'function') {
-    esModule = rawScriptExports
-    scriptExports = rawScriptExports.default
-  }
-
-  // Vue.extend constructor export interop
-  var options = typeof scriptExports === 'function'
-    ? scriptExports.options
-    : scriptExports
-
-  // render functions
-  if (compiledTemplate) {
-    options.render = compiledTemplate.render
-    options.staticRenderFns = compiledTemplate.staticRenderFns
-    options._compiled = true
-  }
-
-  // functional template
-  if (functionalTemplate) {
-    options.functional = true
-  }
-
-  // scopedId
-  if (scopeId) {
-    options._scopeId = scopeId
-  }
-
-  var hook
-  if (moduleIdentifier) { // server build
-    hook = function (context) {
-      // 2.3 injection
-      context =
-        context || // cached call
-        (this.$vnode && this.$vnode.ssrContext) || // stateful
-        (this.parent && this.parent.$vnode && this.parent.$vnode.ssrContext) // functional
-      // 2.2 with runInNewContext: true
-      if (!context && typeof __VUE_SSR_CONTEXT__ !== 'undefined') {
-        context = __VUE_SSR_CONTEXT__
-      }
-      // inject component styles
-      if (injectStyles) {
-        injectStyles.call(this, context)
-      }
-      // register component module identifier for async chunk inferrence
-      if (context && context._registeredComponents) {
-        context._registeredComponents.add(moduleIdentifier)
-      }
-    }
-    // used by ssr in case component is cached and beforeCreate
-    // never gets called
-    options._ssrRegister = hook
-  } else if (injectStyles) {
-    hook = injectStyles
-  }
-
-  if (hook) {
-    var functional = options.functional
-    var existing = functional
-      ? options.render
-      : options.beforeCreate
-
-    if (!functional) {
-      // inject component registration as beforeCreate hook
-      options.beforeCreate = existing
-        ? [].concat(existing, hook)
-        : [hook]
-    } else {
-      // for template-only hot-reload because in that case the render fn doesn't
-      // go through the normalizer
-      options._injectStyles = hook
-      // register for functioal component in vue file
-      options.render = function renderWithStyleInjection (h, context) {
-        hook.call(context)
-        return existing(h, context)
-      }
-    }
-  }
-
-  return {
-    esModule: esModule,
-    exports: scriptExports,
-    options: options
-  }
-}
-
-
-/***/ }),
 /* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 __webpack_require__(15);
-module.exports = __webpack_require__(53);
+module.exports = __webpack_require__(58);
 
 
 /***/ }),
@@ -14237,7 +14237,7 @@ var app = new Vue({
 
 
 window._ = __webpack_require__(17);
-window.Popper = __webpack_require__(3).default;
+window.Popper = __webpack_require__(6).default;
 
 /**
  * We'll load jQuery and the Bootstrap jQuery plugin which provides support
@@ -14246,7 +14246,7 @@ window.Popper = __webpack_require__(3).default;
  */
 
 try {
-  window.$ = window.jQuery = __webpack_require__(4);
+  window.$ = window.jQuery = __webpack_require__(7);
 
   __webpack_require__(19);
 } catch (e) {}
@@ -31435,7 +31435,7 @@ module.exports = function(module) {
   * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
   */
 (function (global, factory) {
-	 true ? factory(exports, __webpack_require__(4), __webpack_require__(3)) :
+	 true ? factory(exports, __webpack_require__(7), __webpack_require__(6)) :
 	typeof define === 'function' && define.amd ? define(['exports', 'jquery', 'popper.js'], factory) :
 	(factory((global.bootstrap = {}),global.jQuery,global.Popper));
 }(this, (function (exports,$,Popper) { 'use strict';
@@ -35339,7 +35339,7 @@ module.exports = __webpack_require__(21);
 
 
 var utils = __webpack_require__(0);
-var bind = __webpack_require__(5);
+var bind = __webpack_require__(8);
 var Axios = __webpack_require__(23);
 var defaults = __webpack_require__(2);
 
@@ -35374,9 +35374,9 @@ axios.create = function create(instanceConfig) {
 };
 
 // Expose Cancel & CancelToken
-axios.Cancel = __webpack_require__(10);
+axios.Cancel = __webpack_require__(13);
 axios.CancelToken = __webpack_require__(37);
-axios.isCancel = __webpack_require__(9);
+axios.isCancel = __webpack_require__(12);
 
 // Expose all/spread
 axios.all = function all(promises) {
@@ -35529,7 +35529,7 @@ module.exports = function normalizeHeaderName(headers, normalizedName) {
 "use strict";
 
 
-var createError = __webpack_require__(8);
+var createError = __webpack_require__(11);
 
 /**
  * Resolve or reject a Promise based on response status.
@@ -35964,7 +35964,7 @@ module.exports = InterceptorManager;
 
 var utils = __webpack_require__(0);
 var transformData = __webpack_require__(34);
-var isCancel = __webpack_require__(9);
+var isCancel = __webpack_require__(12);
 var defaults = __webpack_require__(2);
 var isAbsoluteURL = __webpack_require__(35);
 var combineURLs = __webpack_require__(36);
@@ -36124,7 +36124,7 @@ module.exports = function combineURLs(baseURL, relativeURL) {
 "use strict";
 
 
-var Cancel = __webpack_require__(10);
+var Cancel = __webpack_require__(13);
 
 /**
  * A `CancelToken` is an object that can be used to request cancellation of an operation.
@@ -47290,7 +47290,7 @@ exports.clearImmediate = (typeof self !== "undefined" && self.clearImmediate) ||
     attachTo.clearImmediate = clearImmediate;
 }(typeof self === "undefined" ? typeof global === "undefined" ? this : global : self));
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1), __webpack_require__(6)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1), __webpack_require__(9)))
 
 /***/ }),
 /* 42 */
@@ -47301,11 +47301,11 @@ function injectStyle (ssrContext) {
   if (disposed) return
   __webpack_require__(43)
 }
-var normalizeComponent = __webpack_require__(13)
+var normalizeComponent = __webpack_require__(5)
 /* script */
 var __vue_script__ = __webpack_require__(46)
 /* template */
-var __vue_template__ = __webpack_require__(52)
+var __vue_template__ = __webpack_require__(57)
 /* template functional */
 var __vue_template_functional__ = false
 /* styles */
@@ -47354,7 +47354,7 @@ var content = __webpack_require__(44);
 if(typeof content === 'string') content = [[module.i, content, '']];
 if(content.locals) module.exports = content.locals;
 // add the styles to the DOM
-var update = __webpack_require__(12)("89b8cd50", content, false, {});
+var update = __webpack_require__(4)("89b8cd50", content, false, {});
 // Hot Module Replacement
 if(false) {
  // When the styles change, update the <style> tags
@@ -47373,12 +47373,12 @@ if(false) {
 /* 44 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(11)(false);
+exports = module.exports = __webpack_require__(3)(false);
 // imports
 
 
 // module
-exports.push([module.i, "\nbody {\nbackground-color: #fff;\ncolor: #fff;\nfont-family: 'Dosis', Helvetica, sans-serif;\n-webkit-font-smoothing: antialiased;\n-moz-osx-font-smoothing: grayscale;\ntext-align: center;\nmargin: 0px;\n}\n#app {\nmargin: 0 auto;\nmax-width: 70%;\nmax-height: 80%;\ncolor: #34495e;\n}\nh1 {\ntext-transform: uppercase;\nfont-weight: bold;\nfont-size: 3em;\n}\n.restart {\nbackground-color: #e74c3c;\ncolor: #fff;\nborder: 0px;\nborder-bottom-left-radius: 10px;\nborder-bottom-right-radius: 10px;\nfont-family: 'Dosis', Helvetica, sans-serif;\nfont-size: 1.4em;\nfont-weight: bold;\nmargin: 0px;\npadding: 15px;\nwidth: 100%;\n}\n.restart:hover {\nbackground-color: #c0392b;\ncursor: pointer;\n}\n.scoreBoard {\ndisplay: -webkit-box;\ndisplay: -ms-flexbox;\ndisplay: flex;\n-webkit-box-orient: horizontal;\n-webkit-box-direction: normal;\n    -ms-flex-direction: row;\n        flex-direction: row;\n-ms-flex-pack: distribute;\n    justify-content: space-around;\n-webkit-box-align: center;\n    -ms-flex-align: center;\n        align-items: center;\nwidth: 100%;\nheight: 15px;\nbackground-color: #16a085;\n-webkit-box-shadow: 10px solid #fff;\n        box-shadow: 10px solid #fff;\npadding: 20px;\noverflow-x: none;\n}\n.scoreBoard h2 {\nmargin: 0px;\n}\n.scoreBoard span {\nfloat: right;\nfont-size: 1.5em;\nfont-weight: bold;\nmargin-left: 20px;\n}\n", ""]);
+exports.push([module.i, "\nbody {\n\tbackground-color: #fff;\n\tcolor: #fff;\n\tfont-family: 'Dosis', Helvetica, sans-serif;\n\t-webkit-font-smoothing: antialiased;\n\t-moz-osx-font-smoothing: grayscale;\n\ttext-align: center;\n\tmargin: 0px;\n}\n#app {\n\tmargin: 0 auto;\n\tmax-width: 100%;\n\tmax-height: 100%;\n\tcolor: #34495e;\n}\nh1 {\n\ttext-transform: uppercase;\n\tfont-weight: bold;\n\tfont-size: 5vw;\n}\n.restart {\n\tbackground-color: #e74c3c;\n\tcolor: #fff;\n\tborder: 0px;\n\tborder-bottom-left-radius: 10px;\n\tborder-bottom-right-radius: 10px;\n\tfont-family: 'Dosis', Helvetica, sans-serif;\n\tfont-size: 3vw;\n\tfont-weight: bold;\n\tmargin: 0px;\n\tpadding: 15px;\n\twidth: 100%;\n}\n.restart:hover {\n\tbackground-color: #c0392b;\n\tcursor: pointer;\n}\n.scoreBoard {\n\tdisplay: -webkit-box;\n\tdisplay: -ms-flexbox;\n\tdisplay: flex;\n\t-webkit-box-orient: horizontal;\n\t-webkit-box-direction: normal;\n\t    -ms-flex-direction: row;\n\t        flex-direction: row;\n\t-ms-flex-pack: distribute;\n\t    justify-content: space-around;\n\t-webkit-box-align: center;\n\t    -ms-flex-align: center;\n\t        align-items: center;\n\twidth: 100%;\n\theight: 4vw;\n\tbackground-color: #16a085;\n\t/*box-shadow: 10px solid #fff;*/\n\tpadding: 2.5vw;\n\toverflow-x: none;\n}\n.scoreBoard h2 {\n\tmargin: 0px;\n}\n.scoreBoard span {\n\tfloat: right;\n\tfont-size: 3vw;\n\tfont-weight: bold;\n\tmargin-left: 20px;\n}\n", ""]);
 
 // exports
 
@@ -47467,11 +47467,11 @@ function injectStyle (ssrContext) {
   if (disposed) return
   __webpack_require__(48)
 }
-var normalizeComponent = __webpack_require__(13)
+var normalizeComponent = __webpack_require__(5)
 /* script */
 var __vue_script__ = __webpack_require__(50)
 /* template */
-var __vue_template__ = __webpack_require__(51)
+var __vue_template__ = __webpack_require__(56)
 /* template functional */
 var __vue_template_functional__ = false
 /* styles */
@@ -47520,7 +47520,7 @@ var content = __webpack_require__(49);
 if(typeof content === 'string') content = [[module.i, content, '']];
 if(content.locals) module.exports = content.locals;
 // add the styles to the DOM
-var update = __webpack_require__(12)("7dcdcec6", content, false, {});
+var update = __webpack_require__(4)("7dcdcec6", content, false, {});
 // Hot Module Replacement
 if(false) {
  // When the styles change, update the <style> tags
@@ -47539,12 +47539,12 @@ if(false) {
 /* 49 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(11)(false);
+exports = module.exports = __webpack_require__(3)(false);
 // imports
 
 
 // module
-exports.push([module.i, "\n.grid {\nbackground-color: #34495e;\ncolor: #fff;\nwidth: 100%;\nborder-collapse: collapse;\n}\n.gameStatus {\nmargin: 0;\npadding: 15px;\nborder-top-left-radius: 20px;\nborder-top-right-radius: 20px;\nbackground-color: #f1c40f;\ncolor: #fff;\nfont-size: 1.4em;\nfont-weight: bold;\n}\n.statusTurn {\nbackground-color: #f1c40f;\n}\n.statusWin {\nbackground-color: #2ecc71;\n}\n.statusDraw {\nbackground-color: #9b59b6;\n}\n", ""]);
+exports.push([module.i, "\ntd {\n\tbackground-color: #2c3e50\n}\n.grid {\n\tbackground-color: #34495e;\n\tcolor: #fff;\n\twidth: 100%;\n\tborder-collapse: collapse;\n}\n.gameStatus {\n\tmargin: 0;\n\tpadding: 15px;\n\tborder-top-left-radius: 20px;\n\tborder-top-right-radius: 20px;\n\tbackground-color: #f1c40f;\n\tcolor: #fff;\n\tfont-size: 3vw;\n\tfont-weight: bold;\n}\n.statusTurn {\n\tbackground-color: #f1c40f;\n}\n.statusTurn:hover {\n\tbackground-color: #d9b00d; \n\tcursor: pointer;\n}\n.statusWin {\n\tbackground-color: #2ecc71;\n}\n.statusDraw {\n\tbackground-color: #9b59b6;\n}\n", ""]);
 
 // exports
 
@@ -47555,8 +47555,10 @@ exports.push([module.i, "\n.grid {\nbackground-color: #34495e;\ncolor: #fff;\nwi
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__QuoridorCell_vue__ = __webpack_require__(57);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__QuoridorCell_vue__ = __webpack_require__(51);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__QuoridorCell_vue___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0__QuoridorCell_vue__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__QuoridorHalfWall_vue__ = __webpack_require__(62);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__QuoridorHalfWall_vue___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1__QuoridorHalfWall_vue__);
 //
 //
 //
@@ -47670,6 +47672,231 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+
 
 
 /* harmony default export */ __webpack_exports__["default"] = ({
@@ -47690,11 +47917,29 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 			// statusDraw is purple for a draw
 			gameStatusColor: 'statusTurn',
 
-			// no. of moves played by both players in a single game (m = 9)
+			// no. of moves played by both players in a single game
 			moves: 0,
 
-			// stores the placement of X and O in -cells by their cell number
+			// stores the placement of X and O in cells by their cell number
 			cells: Array(81).fill(''),
+
+			// Caches quoridor-cell children for easy access to their methods with an array that matches their name
+			cellComponentsCache: [],
+
+			verticalWalls: Array(72).fill(''),
+
+			// Caches quoridor-half-wall children with the vertical class for easy access to their methods with an array that matches their name
+			verticalWallComponentsCache: [],
+
+			horizontalWalls: Array(72).fill(''),
+
+			// Caches quoridor-half-wall children with the horizontal class for easy access to their methods with an array that matches their name
+			horizontalWallComponentsCache: [],
+
+			availableWalls: {
+				"O": 8,
+				"X": 8
+			},
 
 			informationMessage: "Player O, move your pawn or place a wall."
 		};
@@ -47702,6 +47947,11 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 	methods: {
 		finishTurn: function finishTurn() {
+			if (!this.frozen) {
+				this.informationMessage = 'You must move your pawn or place a wall before ending your turn.';
+				return;
+			}
+
 			this.changePlayer();
 			this.gameStatusMessage = this.activePlayer + '\'s turn';
 		},
@@ -47713,17 +47963,11 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 		currentLocation: function currentLocation(player) {
 			return this.cells.indexOf(player) + 1; // Our cell ID's start at 1
 		},
-		isLegalMove: function isLegalMove(player, newLocation) {
-			var location = this.currentLocation(player);
-
-			console.log("Current location: " + location + " New location: " + newLocation);
-
+		isLegalCellMove: function isLegalCellMove(location, newLocation) {
 			// If player is along the left side of the board, they cannot move left.
-			console.log("Left side check (true when 0): " + (location - 1) % 9);
 			if ((location - 1) % 9 === 0 && newLocation === location - 1) return false;
 
 			// If player is along the right side of the board, they cannot move right.
-			console.log("Right side check (true when 0): " + location % 9 == 0);
 			if (location % 9 == 0 && newLocation === location + 1) return false;
 
 			// If player is along the top of the board, they cannot move up. It's enough to check if they're trying to move to a location before the start of the board.
@@ -47732,29 +47976,137 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 			// If player is along the bottom of the board, they cannot move down. It's enough to check if they're moving to a location after the bottom edge of the board.
 			if (newLocation > 81) return false;
 
-			// #MoreTime - the final fall through should return true, sit down and reverse this boolean.
-			// Else, the move is legal as long as the pawn is only moving one square at a time.
-			console.log("Checking whether move is legal. Math.abs(location - newLocation) = " + Math.abs(location - newLocation) + " (we expect 1). Math.abs(location - newLocation) = " + Math.abs(location - newLocation) + " (we expect 9).");
-			if (Math.abs(location - newLocation) === 1 || Math.abs(location - newLocation) === 9) {
-				this.informationMessage = "Move is legal.";
-				return true;
+			// Check the pawn is only moving one square at a time.
+			if (Math.abs(location - newLocation) !== 1 // One square either left or right
+			&& Math.abs(location - newLocation) !== 9) // Our board is 9x9, so this calculates up/ down moves.
+				return false;
+
+			return true;
+		},
+		isWallBlockingPath: function isWallBlockingPath(location, newLocation) {
+			var horizontalWallIndexes = [];
+			var verticalWallIndexes = [];
+			var arrayLocation = location - 1; // For direct array comparisons, we have to subtract 1 (our location matches the name values, which start at 1.) Note that our comparisons to newLocation still need to use the original location variable passed into the method.
+
+			// First determine direction. If going left-right, we need to check for vertical walls.
+			if (Math.abs(location - newLocation) === 1) {
+				console.log("Moving horizontally. Checking for vertical walls.");
+				for (var i = 0; i < this.verticalWalls.length; i++) {
+					// If the wall array isn't populated, there isn't a wall here, go on
+					if (this.verticalWalls[i] === '') continue;
+
+					verticalWallIndexes.push(i); // for logging
+					console.log("Found vertical wall at index", i);
+					// Remember, there are only 8 vertical walls per row.
+					console.log("First check that the wall is in the same row as the current location.");
+					console.log("if(Math.floor(i/8) !== Math.floor(arrayLocation/9)) continue;");
+					console.log("Math.floor(i/8) =", Math.floor(i / 8));
+					console.log("Math.floor(arrayLocation/9) =", Math.floor(arrayLocation / 9));
+					// First check that the wall is in the same row as the current location.
+					if (Math.floor(i / 8) !== Math.floor(arrayLocation / 9)) continue;
+
+					console.log("Check that the wall is directly right of the current location, and that we're moving right. (If we're moving left, a wall to our right doesn't block.)");
+					console.log("if(i % 8 === arrayLocation % 9 && newLocation - location === 1) return true;");
+					console.log("i % 8 =", i % 8);
+					console.log("arraryLocation % 9 =", arrayLocation % 9);
+					console.log("newLocation - location =", newLocation - location);
+					// Check that the wall is directly right of the current location, and that we're moving right. (If we're moving left, a wall to our right doesn't block.)
+					if (i % 8 === arrayLocation % 9 && newLocation - location === 1) return true;
+
+					console.log("Check that the wall is directly left us, and that we're moving left.");
+					console.log("if(i % 8 + 1 === arrayLocation % 9 && location - newLocation === 1) return true;");
+					console.log("i % 8 + 1 =", i % 8 + 1);
+					console.log("arrayLocation % 9 =", arrayLocation % 9);
+					console.log("location - newLocation", location - newLocation);
+					// Check that the wall is directly left us, and that we're moving left.
+					if (i % 8 + 1 === arrayLocation % 9 && location - newLocation === 1) return true;
+
+					// If we're here, that means the wall is in the same column but isn't blocking our path, so continue.
+				}
+				// If we made it here, there are no vertical walls blocking our horizontal path, so return.
+				return false;
+			}
+			// Else, we must be traveling vertically, so check for horizontal walls blocking the path.
+			console.log("Moving vertically. Checking for horizontal walls.");
+			for (var _i = 0; _i < this.horizontalWalls.length; _i++) {
+				// If the wall array isn't populated, there isn't a wall here, go on
+				if (this.horizontalWalls[_i] === '') continue;
+
+				horizontalWallIndexes.push(_i); // for logging
+
+				// First check that the wall is in the same column as the current location.
+				if (_i % 9 !== arrayLocation % 9) continue;
+
+				// Check that the wall is directly below the current arrayLocation, and that we're moving down. (If we're moving up, a wall below us doesn't block.)
+				if (Math.floor(_i / 9) === Math.floor(arrayLocation / 9) && newLocation - location === 9) return true;
+
+				// Check that the wall is directly above us, and that we're moving up.
+				if (Math.floor(_i / 9) + 1 === Math.floor(arrayLocation / 9) && location - newLocation === 9) return true;
+
+				// If we're here, that means the wall is in the same column but isn't blocking our path, so continue.
 			}
 
+			console.log("Current location:", location, "New Location:", newLocation, "Horizontal Walls:", horizontalWallIndexes, "Vertical Walls:", verticalWallIndexes);
+
+			// If we made it here, there are no walls to block this move.
 			return false;
+		},
+		isLegalMove: function isLegalMove(player, newLocation) {
+			var location = this.currentLocation(player);
+
+			if (!this.isLegalCellMove(location, newLocation)) return false;
+
+			if (this.isWallBlockingPath(location, newLocation)) return false;
+
+			// Okay, we passed all the illegality checks! The move must be legal.
+			this.informationMessage = "Move is legal. Click the yellow box to change turns.";
+			return true;
 		}
 	},
 	components: {
-		'quoridor-cell': __WEBPACK_IMPORTED_MODULE_0__QuoridorCell_vue___default.a
+		'quoridor-cell': __WEBPACK_IMPORTED_MODULE_0__QuoridorCell_vue___default.a,
+		'quoridor-half-wall': __WEBPACK_IMPORTED_MODULE_1__QuoridorHalfWall_vue___default.a
 	},
 	computed: {
 		// helper property to get the non-active player
 		nonActivePlayer: function nonActivePlayer() {
-			if (this.activePlayer === 'O') {
-
-				return 'X';
-			}
+			if (this.activePlayer === 'O') return 'X';
 
 			return 'O';
+		},
+
+		// helper property to filter children to cell components only so we can match to data.cells array
+		cellComponents: function cellComponents() {
+			if (this.cellComponentsCache.length > 0) return this.cellComponentsCache;
+
+			this.cellComponentsCache = this.$children.filter(function (child) {
+				return child.$options._componentTag === "quoridor-cell";
+			});
+
+			return this.cellComponentsCache;
+		},
+
+		// helper property to filter children to cell components only so we can match to data.cells array
+		verticalWallComponents: function verticalWallComponents() {
+			if (this.verticalWallComponentsCache.length > 0) return this.verticalWallComponentsCache;
+
+			this.verticalWallComponentsCache = this.$children.filter(function (child) {
+				return child.$options._componentTag === "quoridor-half-wall" && child.$options._parentVnode.data.staticClass.search('vertical') !== -1;
+			});
+
+			return this.verticalWallComponentsCache;
+		},
+
+		// helper property to filter children to cell components only so we can match to data.cells array
+		horizontalWallComponents: function horizontalWallComponents() {
+			if (this.horizontalWallComponentsCache.length > 0) return this.horizontalWallComponentsCache;
+
+			this.horizontalWallComponentsCache = this.$children.filter(function (child) {
+				return child.$options._componentTag === "quoridor-half-wall" && child.$options._parentVnode.data.staticClass.search('horizontal') !== -1;
+			});
+
+			console.log(this.horizontalWallComponentsCache);
+			return this.horizontalWallComponentsCache;
 		}
 	},
 	created: function created() {
@@ -47762,23 +48114,24 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 		// listens for a strike made by the user on cell
 		// it is called by the Cell component
-		Event.$on('strike', function (cellNumber) {
-			console.log("Board frozen? " + _this.frozen);
-			if (!_this.isLegalMove(_this.activePlayer, cellNumber)) {
-				_this.informationMessage = "Illegal move.";
-				return;
-			}
-
+		Event.$on('strikeCell', function (cellNumber) {
 			if (_this.frozen) {
 				_this.informationMessage = "You cannot move. Click the yellow box to change turns.";
 				return;
 			}
 
-			_this.$children[_this.currentLocation(_this.activePlayer) - 1].clear();
+			if (!_this.isLegalMove(_this.activePlayer, cellNumber)) {
+				_this.informationMessage = "Illegal move.";
+				return;
+			}
+
+			_this.cellComponents[_this.currentLocation(_this.activePlayer) - 1].clear();
+
 			_this.cells[_this.currentLocation(_this.activePlayer) - 1] = '';
 
 			// sets either X or O in the clicked cell of the cells array
-			_this.$children[cellNumber - 1].set(_this.activePlayer);
+			_this.cellComponents[cellNumber - 1].set(_this.activePlayer);
+
 			_this.cells[cellNumber - 1] = _this.activePlayer;
 
 			// increments the number of moves
@@ -47788,12 +48141,65 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 			//this.gameStatus = this.changeGameStatus();
 
 			_this.frozen = true;
+
+			// this.updateComponents();
+		});
+		Event.$on('strikeWall', function (wallNumber, isVertical) {
+			if (_this.frozen) {
+				_this.informationMessage = "You've already moved this turn. Click the yellow button to end your turn.";
+
+				return;
+			}
+
+			if (_this.availableWalls[_this.activePlayer] < 1) {
+				_this.informationMessage = "No more walls, Player " + _this.activePlayer + ". You can move your pawn.";
+
+				return;
+			}
+
+			var pairedWallNumber = 0;
+
+			if (isVertical) {
+				if (parseInt(wallNumber) + 9 > 72) pairedWallNumber = parseInt(wallNumber) - 8; // Player clicked vertical wall at bottom
+
+				else pairedWallNumber = parseInt(wallNumber) + 8;
+
+				_this.verticalWalls[wallNumber - 1] = _this.verticalWalls[pairedWallNumber - 1] = _this.activePlayer;
+
+				_this.verticalWallComponents[wallNumber - 1].set(_this.activePlayer);
+
+				_this.verticalWallComponents[pairedWallNumber - 1].set(_this.activePlayer);
+			} else {
+				if ((parseInt(wallNumber) + 1) % 9 == 1) pairedWallNumber = parseInt(wallNumber) - 1; // Player clicked a right-most wall
+
+				else pairedWallNumber = parseInt(wallNumber) + 1;
+
+				_this.horizontalWalls[wallNumber - 1] = _this.horizontalWalls[pairedWallNumber - 1] = _this.activePlayer;
+
+				_this.horizontalWallComponents[wallNumber - 1].set(_this.activePlayer);
+
+				_this.horizontalWallComponents[pairedWallNumber - 1].set(_this.activePlayer);
+			}
+
+			_this.availableWalls[_this.activePlayer]--;
+
+			_this.informationMessage = "Player " + _this.activePlayer + ", you have " + _this.availableWalls[_this.activePlayer] + " walls remaining.";
+
+			_this.frozen = true;
 		});
 	},
 	mounted: function mounted() {
-		// Sets the intial pawn positions.
-		this.$children[4].set("O");
-		this.$children[76].set("X");
+		// Sets the intial pawn positions.\
+		// O starts in the middle cell at the top of the board.
+		this.$children[8].set("O");
+		// X starts in the middle cell at the bottom of the board.
+		this.$children[17 * 16 /*total elements in grid except last row*/
+		- 64 /* minus empty td's, those aren't components */
+		+ 8 /*elements to middle cell of row */
+		].set("X");
+		// Computed variables aren't available yet
+		// this.cellComponents[4].set("O");
+		// this.cellComponents[76].set("X");
 		this.cells[4] = "O";
 		this.cells[76] = "X";
 	}
@@ -47801,6 +48207,152 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 /***/ }),
 /* 51 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var disposed = false
+function injectStyle (ssrContext) {
+  if (disposed) return
+  __webpack_require__(52)
+}
+var normalizeComponent = __webpack_require__(5)
+/* script */
+var __vue_script__ = __webpack_require__(54)
+/* template */
+var __vue_template__ = __webpack_require__(55)
+/* template functional */
+var __vue_template_functional__ = false
+/* styles */
+var __vue_styles__ = injectStyle
+/* scopeId */
+var __vue_scopeId__ = null
+/* moduleIdentifier (server only) */
+var __vue_module_identifier__ = null
+var Component = normalizeComponent(
+  __vue_script__,
+  __vue_template__,
+  __vue_template_functional__,
+  __vue_styles__,
+  __vue_scopeId__,
+  __vue_module_identifier__
+)
+Component.options.__file = "resources/assets/js/components/QuoridorCell.vue"
+
+/* hot reload */
+if (false) {(function () {
+  var hotAPI = require("vue-hot-reload-api")
+  hotAPI.install(require("vue"), false)
+  if (!hotAPI.compatible) return
+  module.hot.accept()
+  if (!module.hot.data) {
+    hotAPI.createRecord("data-v-42651e04", Component.options)
+  } else {
+    hotAPI.reload("data-v-42651e04", Component.options)
+  }
+  module.hot.dispose(function (data) {
+    disposed = true
+  })
+})()}
+
+module.exports = Component.exports
+
+
+/***/ }),
+/* 52 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(53);
+if(typeof content === 'string') content = [[module.i, content, '']];
+if(content.locals) module.exports = content.locals;
+// add the styles to the DOM
+var update = __webpack_require__(4)("6b06a870", content, false, {});
+// Hot Module Replacement
+if(false) {
+ // When the styles change, update the <style> tags
+ if(!content.locals) {
+   module.hot.accept("!!../../../../node_modules/css-loader/index.js!../../../../node_modules/vue-loader/lib/style-compiler/index.js?{\"vue\":true,\"id\":\"data-v-42651e04\",\"scoped\":false,\"hasInlineConfig\":true}!../../../../node_modules/vue-loader/lib/selector.js?type=styles&index=0!./QuoridorCell.vue", function() {
+     var newContent = require("!!../../../../node_modules/css-loader/index.js!../../../../node_modules/vue-loader/lib/style-compiler/index.js?{\"vue\":true,\"id\":\"data-v-42651e04\",\"scoped\":false,\"hasInlineConfig\":true}!../../../../node_modules/vue-loader/lib/selector.js?type=styles&index=0!./QuoridorCell.vue");
+     if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+     update(newContent);
+   });
+ }
+ // When the module is disposed, remove the <style> tags
+ module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+/* 53 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(3)(false);
+// imports
+
+
+// module
+exports.push([module.i, "\n.cell {\n\twidth: 4vw;\n\theight: 4vw;\n\tbackground-color: #34495e;\n\tborder: 6px solid #2c3e50;\n\tfont-size: 3.25vw; /* So you don't see re-sizing artifacts when moving pawn. */\n\tfont-family: 'Gochi Hand', sans-serif;\n}\n.cell:hover {\n\tbackground-color: #7f8c8d;\n}\n.cell::after {\n\tcontent: '';\n\tdisplay: block;\n}\n\n", ""]);
+
+// exports
+
+
+/***/ }),
+/* 54 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+//
+//
+//
+//
+
+/* harmony default export */ __webpack_exports__["default"] = ({
+	props: ['name'],
+	data: function data() {
+		return {
+			// holds either X or O to be displayed in the td
+			mark: ''
+		};
+	},
+
+	methods: {
+		set: function set(player) {
+			this.mark = player;
+		},
+		clear: function clear() {
+			this.mark = "";
+		},
+		strike: function strike() {
+			Event.$emit("strikeCell", this.name);
+		}
+	}
+});
+
+/***/ }),
+/* 55 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var render = function() {
+  var _vm = this
+  var _h = _vm.$createElement
+  var _c = _vm._self._c || _h
+  return _c("td", { staticClass: "cell", on: { click: _vm.strike } }, [
+    _vm._v(_vm._s(_vm.mark))
+  ])
+}
+var staticRenderFns = []
+render._withStripped = true
+module.exports = { render: render, staticRenderFns: staticRenderFns }
+if (false) {
+  module.hot.accept()
+  if (module.hot.data) {
+    require("vue-hot-reload-api")      .rerender("data-v-42651e04", module.exports)
+  }
+}
+
+/***/ }),
+/* 56 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var render = function() {
@@ -47826,19 +48378,59 @@ var render = function() {
         [
           _c("quoridor-cell", { attrs: { name: "1" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "1" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "2" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "2" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "3" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "3" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "4" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "4" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "5" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "5" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "6" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "6" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "7" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "7" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "8" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "8" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "9" } })
         ],
@@ -47848,21 +48440,128 @@ var render = function() {
       _c(
         "tr",
         [
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "1" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "2" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "3" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "4" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "5" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "6" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "7" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "8" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "9" }
+          })
+        ],
+        1
+      ),
+      _vm._v(" "),
+      _c(
+        "tr",
+        [
           _c("quoridor-cell", { attrs: { name: "10" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "9" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "11" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "10" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "12" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "11" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "13" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "12" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "14" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "13" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "15" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "14" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "16" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "15" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "17" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "16" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "18" } })
         ],
@@ -47872,21 +48571,128 @@ var render = function() {
       _c(
         "tr",
         [
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "10" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "11" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "12" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "13" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "14" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "15" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "16" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "17" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "18" }
+          })
+        ],
+        1
+      ),
+      _vm._v(" "),
+      _c(
+        "tr",
+        [
           _c("quoridor-cell", { attrs: { name: "19" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "17" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "20" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "18" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "21" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "19" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "22" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "20" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "23" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "21" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "24" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "22" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "25" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "23" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "26" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "24" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "27" } })
         ],
@@ -47896,21 +48702,128 @@ var render = function() {
       _c(
         "tr",
         [
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "19" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "20" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "21" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "22" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "23" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "24" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "25" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "26" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "27" }
+          })
+        ],
+        1
+      ),
+      _vm._v(" "),
+      _c(
+        "tr",
+        [
           _c("quoridor-cell", { attrs: { name: "28" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "25" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "29" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "26" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "30" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "27" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "31" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "28" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "32" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "29" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "33" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "30" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "34" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "31" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "35" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "32" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "36" } })
         ],
@@ -47920,21 +48833,128 @@ var render = function() {
       _c(
         "tr",
         [
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "28" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "29" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "30" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "31" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "32" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "33" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "34" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "35" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "36" }
+          })
+        ],
+        1
+      ),
+      _vm._v(" "),
+      _c(
+        "tr",
+        [
           _c("quoridor-cell", { attrs: { name: "37" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "33" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "38" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "34" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "39" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "35" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "40" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "36" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "41" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "37" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "42" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "38" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "43" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "39" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "44" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "40" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "45" } })
         ],
@@ -47944,21 +48964,128 @@ var render = function() {
       _c(
         "tr",
         [
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "37" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "38" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "39" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "40" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "41" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "42" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "43" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "44" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "45" }
+          })
+        ],
+        1
+      ),
+      _vm._v(" "),
+      _c(
+        "tr",
+        [
           _c("quoridor-cell", { attrs: { name: "46" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "41" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "47" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "42" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "48" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "43" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "49" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "44" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "50" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "45" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "51" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "46" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "52" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "47" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "53" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "48" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "54" } })
         ],
@@ -47968,21 +49095,128 @@ var render = function() {
       _c(
         "tr",
         [
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "46" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "47" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "48" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "49" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "50" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "51" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "52" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "53" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "54" }
+          })
+        ],
+        1
+      ),
+      _vm._v(" "),
+      _c(
+        "tr",
+        [
           _c("quoridor-cell", { attrs: { name: "55" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "49" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "56" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "50" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "57" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "51" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "58" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "52" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "59" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "53" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "60" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "54" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "61" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "55" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "62" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "56" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "63" } })
         ],
@@ -47992,21 +49226,128 @@ var render = function() {
       _c(
         "tr",
         [
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "55" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "56" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "57" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "58" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "59" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "60" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "61" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "62" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "63" }
+          })
+        ],
+        1
+      ),
+      _vm._v(" "),
+      _c(
+        "tr",
+        [
           _c("quoridor-cell", { attrs: { name: "64" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "57" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "65" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "58" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "66" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "59" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "67" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "60" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "68" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "61" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "69" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "62" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "70" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "63" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "71" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "64" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "72" } })
         ],
@@ -48016,21 +49357,128 @@ var render = function() {
       _c(
         "tr",
         [
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "64" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "65" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "66" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "67" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "68" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "69" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "70" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "71" }
+          }),
+          _vm._v(" "),
+          _c("td"),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "horizontal",
+            attrs: { name: "72" }
+          })
+        ],
+        1
+      ),
+      _vm._v(" "),
+      _c(
+        "tr",
+        [
           _c("quoridor-cell", { attrs: { name: "73" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "65" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "74" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "66" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "75" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "67" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "76" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "68" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "77" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "69" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "78" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "70" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "79" } }),
           _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "71" }
+          }),
+          _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "80" } }),
+          _vm._v(" "),
+          _c("quoridor-half-wall", {
+            staticClass: "vertical",
+            attrs: { name: "72" }
+          }),
           _vm._v(" "),
           _c("quoridor-cell", { attrs: { name: "81" } })
         ],
@@ -48050,7 +49498,7 @@ if (false) {
 }
 
 /***/ }),
-/* 52 */
+/* 57 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var render = function() {
@@ -48092,28 +49540,28 @@ if (false) {
 }
 
 /***/ }),
-/* 53 */
+/* 58 */
 /***/ (function(module, exports) {
 
 // removed by extract-text-webpack-plugin
 
 /***/ }),
-/* 54 */,
-/* 55 */,
-/* 56 */,
-/* 57 */
+/* 59 */,
+/* 60 */,
+/* 61 */,
+/* 62 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var disposed = false
 function injectStyle (ssrContext) {
   if (disposed) return
-  __webpack_require__(58)
+  __webpack_require__(64)
 }
-var normalizeComponent = __webpack_require__(13)
+var normalizeComponent = __webpack_require__(5)
 /* script */
-var __vue_script__ = __webpack_require__(60)
+var __vue_script__ = __webpack_require__(66)
 /* template */
-var __vue_template__ = __webpack_require__(61)
+var __vue_template__ = __webpack_require__(63)
 /* template functional */
 var __vue_template_functional__ = false
 /* styles */
@@ -48130,7 +49578,7 @@ var Component = normalizeComponent(
   __vue_scopeId__,
   __vue_module_identifier__
 )
-Component.options.__file = "resources/assets/js/components/QuoridorCell.vue"
+Component.options.__file = "resources/assets/js/components/QuoridorHalfWall.vue"
 
 /* hot reload */
 if (false) {(function () {
@@ -48139,9 +49587,9 @@ if (false) {(function () {
   if (!hotAPI.compatible) return
   module.hot.accept()
   if (!module.hot.data) {
-    hotAPI.createRecord("data-v-42651e04", Component.options)
+    hotAPI.createRecord("data-v-7f26a4b9", Component.options)
   } else {
-    hotAPI.reload("data-v-42651e04", Component.options)
+    hotAPI.reload("data-v-7f26a4b9", Component.options)
   }
   module.hot.dispose(function (data) {
     disposed = true
@@ -48152,23 +49600,47 @@ module.exports = Component.exports
 
 
 /***/ }),
-/* 58 */
+/* 63 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var render = function() {
+  var _vm = this
+  var _h = _vm.$createElement
+  var _c = _vm._self._c || _h
+  return _c("td", {
+    staticClass: "wall",
+    class: _vm.player,
+    on: { click: _vm.strike }
+  })
+}
+var staticRenderFns = []
+render._withStripped = true
+module.exports = { render: render, staticRenderFns: staticRenderFns }
+if (false) {
+  module.hot.accept()
+  if (module.hot.data) {
+    require("vue-hot-reload-api")      .rerender("data-v-7f26a4b9", module.exports)
+  }
+}
+
+/***/ }),
+/* 64 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(59);
+var content = __webpack_require__(65);
 if(typeof content === 'string') content = [[module.i, content, '']];
 if(content.locals) module.exports = content.locals;
 // add the styles to the DOM
-var update = __webpack_require__(12)("6b06a870", content, false, {});
+var update = __webpack_require__(4)("0aab65ee", content, false, {});
 // Hot Module Replacement
 if(false) {
  // When the styles change, update the <style> tags
  if(!content.locals) {
-   module.hot.accept("!!../../../../node_modules/css-loader/index.js!../../../../node_modules/vue-loader/lib/style-compiler/index.js?{\"vue\":true,\"id\":\"data-v-42651e04\",\"scoped\":false,\"hasInlineConfig\":true}!../../../../node_modules/vue-loader/lib/selector.js?type=styles&index=0!./QuoridorCell.vue", function() {
-     var newContent = require("!!../../../../node_modules/css-loader/index.js!../../../../node_modules/vue-loader/lib/style-compiler/index.js?{\"vue\":true,\"id\":\"data-v-42651e04\",\"scoped\":false,\"hasInlineConfig\":true}!../../../../node_modules/vue-loader/lib/selector.js?type=styles&index=0!./QuoridorCell.vue");
+   module.hot.accept("!!../../../../node_modules/css-loader/index.js!../../../../node_modules/vue-loader/lib/style-compiler/index.js?{\"vue\":true,\"id\":\"data-v-7f26a4b9\",\"scoped\":false,\"hasInlineConfig\":true}!../../../../node_modules/vue-loader/lib/selector.js?type=styles&index=0!./QuoridorHalfWall.vue", function() {
+     var newContent = require("!!../../../../node_modules/css-loader/index.js!../../../../node_modules/vue-loader/lib/style-compiler/index.js?{\"vue\":true,\"id\":\"data-v-7f26a4b9\",\"scoped\":false,\"hasInlineConfig\":true}!../../../../node_modules/vue-loader/lib/selector.js?type=styles&index=0!./QuoridorHalfWall.vue");
      if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
      update(newContent);
    });
@@ -48178,26 +49650,25 @@ if(false) {
 }
 
 /***/ }),
-/* 59 */
+/* 65 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(11)(false);
+exports = module.exports = __webpack_require__(3)(false);
 // imports
 
 
 // module
-exports.push([module.i, "\n.cell {\n  width: 5vw;\n  height: 5vw;\n  border: 6px solid #2c3e50;\n  font-size: 4vw;\n  font-family: 'Gochi Hand', sans-serif;\n}\n.cell:hover {\n    background-color: #7f8c8d;\n}\n.cell::after {\n  content: '';\n  display: block;\n}\n.cell:first-of-type {\n  /*border-left-color: transparent;*/\n  /*border-top-color: transparent;*/\n}\n.cell:nth-of-type(2) {\n  /*border-top-color: transparent;*/\n}\n.cell:nth-of-type(9) {\n  /*border-right-color: transparent;*/\n  /*border-top-color: transparent;*/\n}\ntr:nth-of-type(9) .cell {\n  /*border-bottom-color: transparent;*/\n}\n\n", ""]);
+exports.push([module.i, "\n.wall {\n\tbackground-color: #2c3e50;\n}\n/* #MoreTime - would convert this color change on hover to a js on mouse-over event, and color both cells the wall would apply to. */\n.wall:hover {\n\tbackground-color: #34495e;\n}\n.horizontal {\n\theight: 6px;\n}\n.vertical {\n\twidth: 6px;\n}\n.playerO, .playerO:hover {\n\tbackground-color: #87B6A7;\n}\n.playerX, .playerX:hover {\n\tbackground-color: #F7D08A;\n}\n", ""]);
 
 // exports
 
 
 /***/ }),
-/* 60 */
+/* 66 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-//
 //
 //
 //
@@ -48206,48 +49677,30 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 	props: ['name'],
 	data: function data() {
 		return {
-			// enables the player to place a mark
-			frozen: false,
-
-			// holds either X or O to be displayed in the td
-			mark: ''
+			player: ''
 		};
 	},
 
 	methods: {
 		set: function set(player) {
-			this.mark = player;
+			this.player = 'player' + player;
+
+			console.log(this);
 		},
 		clear: function clear() {
-			this.mark = "";
+			this.player = "";
 		},
 		strike: function strike() {
-			Event.$emit("strike", this.name);
+			console.log(this.$options._parentVnode.data.staticClass + " wall " + this.name + " was struck!");
+			if (this.$options._parentVnode.data.staticClass.search('vertical') !== -1) {
+				Event.$emit("strikeWall", this.name, true);
+			}
+			if (this.$options._parentVnode.data.staticClass.search('horizontal') !== -1) {
+				Event.$emit('strikeWall', this.name, false);
+			}
 		}
 	}
 });
-
-/***/ }),
-/* 61 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var render = function() {
-  var _vm = this
-  var _h = _vm.$createElement
-  var _c = _vm._self._c || _h
-  return _c("td", { staticClass: "cell", on: { click: _vm.strike } }, [
-    _vm._v(_vm._s(_vm.mark))
-  ])
-}
-var staticRenderFns = []
-render._withStripped = true
-module.exports = { render: render, staticRenderFns: staticRenderFns }
-if (false) {
-  module.hot.accept()
-  if (module.hot.data) {
-    require("vue-hot-reload-api")      .rerender("data-v-42651e04", module.exports)
-  }
-}
 
 /***/ })
 /******/ ]);
