@@ -19,7 +19,6 @@
 					this.player = "";
 				},
 				strike() {
-					console.log(this.$options._parentVnode.data.staticClass + " wall " + this.name + " was struck!" );
 					if (this.$options._parentVnode.data.staticClass.search('vertical') !== -1) {
 						Event.$emit("strikeWall", this.name, true);
 					}
@@ -27,16 +26,21 @@
 						Event.$emit('strikeWall', this.name, false);
 					}
 				}
+			},
+			created() {
+				Event.$on('clearWalls', () => {
+					this.player = '';
+				});
 			}
 	}
 </script>
 <style>
 	.wall {
-		background-color: #2c3e50;
+		background-color: #0F110C;
 	}
 	/* #MoreTime - would convert this color change on hover to a js on mouse-over event, and color both cells the wall would apply to. */
 	.wall:hover {
-		background-color: #34495e;
+		background-color: #2a3022;
 	}
 	.horizontal {
 		height: 6px;
@@ -45,9 +49,9 @@
 		width: 6px;
 	}
 	.playerO, .playerO:hover {
-		background-color: #87B6A7;
+		background-color: #8F5A76;
 	}
 	.playerX, .playerX:hover {
-		background-color: #F7D08A;
+		background-color: #CECCCC;
 	}
 </style>

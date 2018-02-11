@@ -10,7 +10,7 @@
 			<h2>Match #{{ matches + 1 }}</h2>
 		</div>
 		<quoridor-grid></quoridor-grid>
-		<button class="restart">Restart</button>
+		<button class="restart" @click="restart">Restart</button>
 	</div>
 </template>
 
@@ -28,6 +28,18 @@
 		},
 		components: {
 			'quoridor-grid': QuoridorGrid
+		},
+		methods: {
+			restart() {
+				Event.$emit("resetGrid");
+				Event.$emit("clearWalls");
+				this.matches++;
+			}
+		},
+		created() {
+			Event.$on('win', (winner) => {
+				this.wins[winner]++;
+			});
 		}
 	}
 </script>
@@ -35,7 +47,8 @@
 <style>
 	body {
 		background-color: #fff;
-		color: #fff;
+		color: #9D6381;
+		font-weight: bolder;
 		font-family: 'Dosis', Helvetica, sans-serif;
 		-webkit-font-smoothing: antialiased;
 		-moz-osx-font-smoothing: grayscale;
@@ -46,7 +59,7 @@
 		margin: 0 auto;
 		max-width: 100%;
 		max-height: 100%;
-		color: #34495e;
+		color: #612940;
 	}
 	h1 {
 		text-transform: uppercase;
@@ -54,7 +67,7 @@
 		font-size: 5vw;
 	}
 	.restart {
-		background-color: #e74c3c;
+		background-color: #612940;
 		color: #fff;
 		border: 0px;
 		border-bottom-left-radius: 10px;
@@ -67,7 +80,7 @@
 		width: 100%;
 	}
 	.restart:hover {
-		background-color: #c0392b;
+		background-color: #853858;
 		cursor: pointer;
 	}
 	.scoreBoard {
@@ -77,7 +90,7 @@
 		align-items: center;
 		width: 100%;
 		height: 4vw;
-		background-color: #16a085;
+		background-color: #CECCCC;
 		/*box-shadow: 10px solid #fff;*/
 		padding: 2.5vw;
 		overflow-x: none;

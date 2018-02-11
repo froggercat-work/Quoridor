@@ -402,106 +402,6 @@ module.exports = g;
 
 /***/ }),
 /* 2 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-/* WEBPACK VAR INJECTION */(function(process) {
-
-var utils = __webpack_require__(0);
-var normalizeHeaderName = __webpack_require__(24);
-
-var DEFAULT_CONTENT_TYPE = {
-  'Content-Type': 'application/x-www-form-urlencoded'
-};
-
-function setContentTypeIfUnset(headers, value) {
-  if (!utils.isUndefined(headers) && utils.isUndefined(headers['Content-Type'])) {
-    headers['Content-Type'] = value;
-  }
-}
-
-function getDefaultAdapter() {
-  var adapter;
-  if (typeof XMLHttpRequest !== 'undefined') {
-    // For browsers use XHR adapter
-    adapter = __webpack_require__(10);
-  } else if (typeof process !== 'undefined') {
-    // For node use HTTP adapter
-    adapter = __webpack_require__(10);
-  }
-  return adapter;
-}
-
-var defaults = {
-  adapter: getDefaultAdapter(),
-
-  transformRequest: [function transformRequest(data, headers) {
-    normalizeHeaderName(headers, 'Content-Type');
-    if (utils.isFormData(data) ||
-      utils.isArrayBuffer(data) ||
-      utils.isBuffer(data) ||
-      utils.isStream(data) ||
-      utils.isFile(data) ||
-      utils.isBlob(data)
-    ) {
-      return data;
-    }
-    if (utils.isArrayBufferView(data)) {
-      return data.buffer;
-    }
-    if (utils.isURLSearchParams(data)) {
-      setContentTypeIfUnset(headers, 'application/x-www-form-urlencoded;charset=utf-8');
-      return data.toString();
-    }
-    if (utils.isObject(data)) {
-      setContentTypeIfUnset(headers, 'application/json;charset=utf-8');
-      return JSON.stringify(data);
-    }
-    return data;
-  }],
-
-  transformResponse: [function transformResponse(data) {
-    /*eslint no-param-reassign:0*/
-    if (typeof data === 'string') {
-      try {
-        data = JSON.parse(data);
-      } catch (e) { /* Ignore */ }
-    }
-    return data;
-  }],
-
-  timeout: 0,
-
-  xsrfCookieName: 'XSRF-TOKEN',
-  xsrfHeaderName: 'X-XSRF-TOKEN',
-
-  maxContentLength: -1,
-
-  validateStatus: function validateStatus(status) {
-    return status >= 200 && status < 300;
-  }
-};
-
-defaults.headers = {
-  common: {
-    'Accept': 'application/json, text/plain, */*'
-  }
-};
-
-utils.forEach(['delete', 'get', 'head'], function forEachMethodNoData(method) {
-  defaults.headers[method] = {};
-});
-
-utils.forEach(['post', 'put', 'patch'], function forEachMethodWithData(method) {
-  defaults.headers[method] = utils.merge(DEFAULT_CONTENT_TYPE);
-});
-
-module.exports = defaults;
-
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(9)))
-
-/***/ }),
-/* 3 */
 /***/ (function(module, exports) {
 
 /*
@@ -583,7 +483,7 @@ function toComment(sourceMap) {
 
 
 /***/ }),
-/* 4 */
+/* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /*
@@ -811,7 +711,7 @@ function applyToTag (styleElement, obj) {
 
 
 /***/ }),
-/* 5 */
+/* 4 */
 /***/ (function(module, exports) {
 
 /* globals __VUE_SSR_CONTEXT__ */
@@ -918,6 +818,106 @@ module.exports = function normalizeComponent (
   }
 }
 
+
+/***/ }),
+/* 5 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(process) {
+
+var utils = __webpack_require__(0);
+var normalizeHeaderName = __webpack_require__(24);
+
+var DEFAULT_CONTENT_TYPE = {
+  'Content-Type': 'application/x-www-form-urlencoded'
+};
+
+function setContentTypeIfUnset(headers, value) {
+  if (!utils.isUndefined(headers) && utils.isUndefined(headers['Content-Type'])) {
+    headers['Content-Type'] = value;
+  }
+}
+
+function getDefaultAdapter() {
+  var adapter;
+  if (typeof XMLHttpRequest !== 'undefined') {
+    // For browsers use XHR adapter
+    adapter = __webpack_require__(10);
+  } else if (typeof process !== 'undefined') {
+    // For node use HTTP adapter
+    adapter = __webpack_require__(10);
+  }
+  return adapter;
+}
+
+var defaults = {
+  adapter: getDefaultAdapter(),
+
+  transformRequest: [function transformRequest(data, headers) {
+    normalizeHeaderName(headers, 'Content-Type');
+    if (utils.isFormData(data) ||
+      utils.isArrayBuffer(data) ||
+      utils.isBuffer(data) ||
+      utils.isStream(data) ||
+      utils.isFile(data) ||
+      utils.isBlob(data)
+    ) {
+      return data;
+    }
+    if (utils.isArrayBufferView(data)) {
+      return data.buffer;
+    }
+    if (utils.isURLSearchParams(data)) {
+      setContentTypeIfUnset(headers, 'application/x-www-form-urlencoded;charset=utf-8');
+      return data.toString();
+    }
+    if (utils.isObject(data)) {
+      setContentTypeIfUnset(headers, 'application/json;charset=utf-8');
+      return JSON.stringify(data);
+    }
+    return data;
+  }],
+
+  transformResponse: [function transformResponse(data) {
+    /*eslint no-param-reassign:0*/
+    if (typeof data === 'string') {
+      try {
+        data = JSON.parse(data);
+      } catch (e) { /* Ignore */ }
+    }
+    return data;
+  }],
+
+  timeout: 0,
+
+  xsrfCookieName: 'XSRF-TOKEN',
+  xsrfHeaderName: 'X-XSRF-TOKEN',
+
+  maxContentLength: -1,
+
+  validateStatus: function validateStatus(status) {
+    return status >= 200 && status < 300;
+  }
+};
+
+defaults.headers = {
+  common: {
+    'Accept': 'application/json, text/plain, */*'
+  }
+};
+
+utils.forEach(['delete', 'get', 'head'], function forEachMethodNoData(method) {
+  defaults.headers[method] = {};
+});
+
+utils.forEach(['post', 'put', 'patch'], function forEachMethodWithData(method) {
+  defaults.headers[method] = utils.merge(DEFAULT_CONTENT_TYPE);
+});
+
+module.exports = defaults;
+
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(9)))
 
 /***/ }),
 /* 6 */
@@ -14199,7 +14199,7 @@ module.exports = Cancel;
 /***/ (function(module, exports, __webpack_require__) {
 
 __webpack_require__(15);
-module.exports = __webpack_require__(58);
+module.exports = __webpack_require__(63);
 
 
 /***/ }),
@@ -35341,7 +35341,7 @@ module.exports = __webpack_require__(21);
 var utils = __webpack_require__(0);
 var bind = __webpack_require__(8);
 var Axios = __webpack_require__(23);
-var defaults = __webpack_require__(2);
+var defaults = __webpack_require__(5);
 
 /**
  * Create an instance of Axios
@@ -35424,7 +35424,7 @@ function isSlowBuffer (obj) {
 "use strict";
 
 
-var defaults = __webpack_require__(2);
+var defaults = __webpack_require__(5);
 var utils = __webpack_require__(0);
 var InterceptorManager = __webpack_require__(32);
 var dispatchRequest = __webpack_require__(33);
@@ -35965,7 +35965,7 @@ module.exports = InterceptorManager;
 var utils = __webpack_require__(0);
 var transformData = __webpack_require__(34);
 var isCancel = __webpack_require__(12);
-var defaults = __webpack_require__(2);
+var defaults = __webpack_require__(5);
 var isAbsoluteURL = __webpack_require__(35);
 var combineURLs = __webpack_require__(36);
 
@@ -47301,11 +47301,11 @@ function injectStyle (ssrContext) {
   if (disposed) return
   __webpack_require__(43)
 }
-var normalizeComponent = __webpack_require__(5)
+var normalizeComponent = __webpack_require__(4)
 /* script */
 var __vue_script__ = __webpack_require__(46)
 /* template */
-var __vue_template__ = __webpack_require__(57)
+var __vue_template__ = __webpack_require__(62)
 /* template functional */
 var __vue_template_functional__ = false
 /* styles */
@@ -47354,7 +47354,7 @@ var content = __webpack_require__(44);
 if(typeof content === 'string') content = [[module.i, content, '']];
 if(content.locals) module.exports = content.locals;
 // add the styles to the DOM
-var update = __webpack_require__(4)("89b8cd50", content, false, {});
+var update = __webpack_require__(3)("89b8cd50", content, false, {});
 // Hot Module Replacement
 if(false) {
  // When the styles change, update the <style> tags
@@ -47373,12 +47373,12 @@ if(false) {
 /* 44 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(3)(false);
+exports = module.exports = __webpack_require__(2)(false);
 // imports
 
 
 // module
-exports.push([module.i, "\nbody {\n\tbackground-color: #fff;\n\tcolor: #fff;\n\tfont-family: 'Dosis', Helvetica, sans-serif;\n\t-webkit-font-smoothing: antialiased;\n\t-moz-osx-font-smoothing: grayscale;\n\ttext-align: center;\n\tmargin: 0px;\n}\n#app {\n\tmargin: 0 auto;\n\tmax-width: 100%;\n\tmax-height: 100%;\n\tcolor: #34495e;\n}\nh1 {\n\ttext-transform: uppercase;\n\tfont-weight: bold;\n\tfont-size: 5vw;\n}\n.restart {\n\tbackground-color: #e74c3c;\n\tcolor: #fff;\n\tborder: 0px;\n\tborder-bottom-left-radius: 10px;\n\tborder-bottom-right-radius: 10px;\n\tfont-family: 'Dosis', Helvetica, sans-serif;\n\tfont-size: 3vw;\n\tfont-weight: bold;\n\tmargin: 0px;\n\tpadding: 15px;\n\twidth: 100%;\n}\n.restart:hover {\n\tbackground-color: #c0392b;\n\tcursor: pointer;\n}\n.scoreBoard {\n\tdisplay: -webkit-box;\n\tdisplay: -ms-flexbox;\n\tdisplay: flex;\n\t-webkit-box-orient: horizontal;\n\t-webkit-box-direction: normal;\n\t    -ms-flex-direction: row;\n\t        flex-direction: row;\n\t-ms-flex-pack: distribute;\n\t    justify-content: space-around;\n\t-webkit-box-align: center;\n\t    -ms-flex-align: center;\n\t        align-items: center;\n\twidth: 100%;\n\theight: 4vw;\n\tbackground-color: #16a085;\n\t/*box-shadow: 10px solid #fff;*/\n\tpadding: 2.5vw;\n\toverflow-x: none;\n}\n.scoreBoard h2 {\n\tmargin: 0px;\n}\n.scoreBoard span {\n\tfloat: right;\n\tfont-size: 3vw;\n\tfont-weight: bold;\n\tmargin-left: 20px;\n}\n", ""]);
+exports.push([module.i, "\nbody {\n\tbackground-color: #fff;\n\tcolor: #9D6381;\n\tfont-weight: bolder;\n\tfont-family: 'Dosis', Helvetica, sans-serif;\n\t-webkit-font-smoothing: antialiased;\n\t-moz-osx-font-smoothing: grayscale;\n\ttext-align: center;\n\tmargin: 0px;\n}\n#app {\n\tmargin: 0 auto;\n\tmax-width: 100%;\n\tmax-height: 100%;\n\tcolor: #612940;\n}\nh1 {\n\ttext-transform: uppercase;\n\tfont-weight: bold;\n\tfont-size: 5vw;\n}\n.restart {\n\tbackground-color: #612940;\n\tcolor: #fff;\n\tborder: 0px;\n\tborder-bottom-left-radius: 10px;\n\tborder-bottom-right-radius: 10px;\n\tfont-family: 'Dosis', Helvetica, sans-serif;\n\tfont-size: 3vw;\n\tfont-weight: bold;\n\tmargin: 0px;\n\tpadding: 15px;\n\twidth: 100%;\n}\n.restart:hover {\n\tbackground-color: #853858;\n\tcursor: pointer;\n}\n.scoreBoard {\n\tdisplay: -webkit-box;\n\tdisplay: -ms-flexbox;\n\tdisplay: flex;\n\t-webkit-box-orient: horizontal;\n\t-webkit-box-direction: normal;\n\t    -ms-flex-direction: row;\n\t        flex-direction: row;\n\t-ms-flex-pack: distribute;\n\t    justify-content: space-around;\n\t-webkit-box-align: center;\n\t    -ms-flex-align: center;\n\t        align-items: center;\n\twidth: 100%;\n\theight: 4vw;\n\tbackground-color: #CECCCC;\n\t/*box-shadow: 10px solid #fff;*/\n\tpadding: 2.5vw;\n\toverflow-x: none;\n}\n.scoreBoard h2 {\n\tmargin: 0px;\n}\n.scoreBoard span {\n\tfloat: right;\n\tfont-size: 3vw;\n\tfont-weight: bold;\n\tmargin-left: 20px;\n}\n", ""]);
 
 // exports
 
@@ -47455,6 +47455,20 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 	components: {
 		'quoridor-grid': __WEBPACK_IMPORTED_MODULE_0__components_QuoridorGrid_vue___default.a
+	},
+	methods: {
+		restart: function restart() {
+			Event.$emit("resetGrid");
+			Event.$emit("clearWalls");
+			this.matches++;
+		}
+	},
+	created: function created() {
+		var _this = this;
+
+		Event.$on('win', function (winner) {
+			_this.wins[winner]++;
+		});
 	}
 });
 
@@ -47467,11 +47481,11 @@ function injectStyle (ssrContext) {
   if (disposed) return
   __webpack_require__(48)
 }
-var normalizeComponent = __webpack_require__(5)
+var normalizeComponent = __webpack_require__(4)
 /* script */
 var __vue_script__ = __webpack_require__(50)
 /* template */
-var __vue_template__ = __webpack_require__(56)
+var __vue_template__ = __webpack_require__(61)
 /* template functional */
 var __vue_template_functional__ = false
 /* styles */
@@ -47520,7 +47534,7 @@ var content = __webpack_require__(49);
 if(typeof content === 'string') content = [[module.i, content, '']];
 if(content.locals) module.exports = content.locals;
 // add the styles to the DOM
-var update = __webpack_require__(4)("7dcdcec6", content, false, {});
+var update = __webpack_require__(3)("7dcdcec6", content, false, {});
 // Hot Module Replacement
 if(false) {
  // When the styles change, update the <style> tags
@@ -47539,12 +47553,12 @@ if(false) {
 /* 49 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(3)(false);
+exports = module.exports = __webpack_require__(2)(false);
 // imports
 
 
 // module
-exports.push([module.i, "\ntd {\n\tbackground-color: #2c3e50\n}\n.grid {\n\tbackground-color: #34495e;\n\tcolor: #fff;\n\twidth: 100%;\n\tborder-collapse: collapse;\n}\n.gameStatus {\n\tmargin: 0;\n\tpadding: 15px;\n\tborder-top-left-radius: 20px;\n\tborder-top-right-radius: 20px;\n\tbackground-color: #f1c40f;\n\tcolor: #fff;\n\tfont-size: 3vw;\n\tfont-weight: bold;\n}\n.statusTurn {\n\tbackground-color: #f1c40f;\n}\n.statusTurn:hover {\n\tbackground-color: #d9b00d; \n\tcursor: pointer;\n}\n.statusWin {\n\tbackground-color: #2ecc71;\n}\n.statusDraw {\n\tbackground-color: #9b59b6;\n}\n", ""]);
+exports.push([module.i, "\ntd {\n\tbackground-color: #0F110C\n}\n.grid {\n\tbackground-color: #0F110C;\n\t/*color: #fff;*/\n\twidth: 100%;\n\tborder-collapse: collapse;\n}\n.gameStatus {\n\tmargin: 0;\n\tpadding: 15px;\n\tborder-top-left-radius: 20px;\n\tborder-top-right-radius: 20px;\n\tbackground-color: #CECCCC;\n\tcolor: #fff;\n\tfont-size: 3vw;\n\tfont-weight: bold;\n}\n.statusTurn {\n\tbackground-color: #8B8183;\n}\n.statusTurn:hover {\n\t/*background-color: #d9b00d; \n\tcursor: pointer;*/\n}\n.statusWin {\n\tbackground-color: #f1d57e;\n\tcolor: #8F5A76;\n}\n.statusDraw {\n\tbackground-color: #0F110C;\n}\n", ""]);
 
 // exports
 
@@ -47557,7 +47571,7 @@ exports.push([module.i, "\ntd {\n\tbackground-color: #2c3e50\n}\n.grid {\n\tback
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__QuoridorCell_vue__ = __webpack_require__(51);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__QuoridorCell_vue___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0__QuoridorCell_vue__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__QuoridorHalfWall_vue__ = __webpack_require__(62);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__QuoridorHalfWall_vue__ = __webpack_require__(56);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__QuoridorHalfWall_vue___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1__QuoridorHalfWall_vue__);
 //
 //
@@ -47952,13 +47966,13 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 				return;
 			}
 
-			this.changePlayer();
-			this.gameStatusMessage = this.activePlayer + '\'s turn';
-		},
-		changePlayer: function changePlayer() {
 			this.activePlayer = this.nonActivePlayer;
+
 			this.frozen = false;
+
 			this.informationMessage = "Player " + this.activePlayer + ", move your pawn or place a wall.";
+
+			this.gameStatusMessage = this.activePlayer + '\'s turn';
 		},
 		currentLocation: function currentLocation(player) {
 			return this.cells.indexOf(player) + 1; // Our cell ID's start at 1
@@ -47981,6 +47995,9 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 			&& Math.abs(location - newLocation) !== 9) // Our board is 9x9, so this calculates up/ down moves.
 				return false;
 
+			// if the other player is in the target location, the move is invalid.
+			if (this.currentLocation(this.nonActivePlayer) == newLocation) return false;
+
 			return true;
 		},
 		isWallBlockingPath: function isWallBlockingPath(location, newLocation) {
@@ -47990,34 +48007,18 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 			// First determine direction. If going left-right, we need to check for vertical walls.
 			if (Math.abs(location - newLocation) === 1) {
-				console.log("Moving horizontally. Checking for vertical walls.");
 				for (var i = 0; i < this.verticalWalls.length; i++) {
 					// If the wall array isn't populated, there isn't a wall here, go on
 					if (this.verticalWalls[i] === '') continue;
 
 					verticalWallIndexes.push(i); // for logging
-					console.log("Found vertical wall at index", i);
 					// Remember, there are only 8 vertical walls per row.
-					console.log("First check that the wall is in the same row as the current location.");
-					console.log("if(Math.floor(i/8) !== Math.floor(arrayLocation/9)) continue;");
-					console.log("Math.floor(i/8) =", Math.floor(i / 8));
-					console.log("Math.floor(arrayLocation/9) =", Math.floor(arrayLocation / 9));
 					// First check that the wall is in the same row as the current location.
 					if (Math.floor(i / 8) !== Math.floor(arrayLocation / 9)) continue;
 
-					console.log("Check that the wall is directly right of the current location, and that we're moving right. (If we're moving left, a wall to our right doesn't block.)");
-					console.log("if(i % 8 === arrayLocation % 9 && newLocation - location === 1) return true;");
-					console.log("i % 8 =", i % 8);
-					console.log("arraryLocation % 9 =", arrayLocation % 9);
-					console.log("newLocation - location =", newLocation - location);
 					// Check that the wall is directly right of the current location, and that we're moving right. (If we're moving left, a wall to our right doesn't block.)
 					if (i % 8 === arrayLocation % 9 && newLocation - location === 1) return true;
 
-					console.log("Check that the wall is directly left us, and that we're moving left.");
-					console.log("if(i % 8 + 1 === arrayLocation % 9 && location - newLocation === 1) return true;");
-					console.log("i % 8 + 1 =", i % 8 + 1);
-					console.log("arrayLocation % 9 =", arrayLocation % 9);
-					console.log("location - newLocation", location - newLocation);
 					// Check that the wall is directly left us, and that we're moving left.
 					if (i % 8 + 1 === arrayLocation % 9 && location - newLocation === 1) return true;
 
@@ -48027,7 +48028,6 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 				return false;
 			}
 			// Else, we must be traveling vertically, so check for horizontal walls blocking the path.
-			console.log("Moving vertically. Checking for horizontal walls.");
 			for (var _i = 0; _i < this.horizontalWalls.length; _i++) {
 				// If the wall array isn't populated, there isn't a wall here, go on
 				if (this.horizontalWalls[_i] === '') continue;
@@ -48046,8 +48046,6 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 				// If we're here, that means the wall is in the same column but isn't blocking our path, so continue.
 			}
 
-			console.log("Current location:", location, "New Location:", newLocation, "Horizontal Walls:", horizontalWallIndexes, "Vertical Walls:", verticalWallIndexes);
-
 			// If we made it here, there are no walls to block this move.
 			return false;
 		},
@@ -48059,8 +48057,30 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 			if (this.isWallBlockingPath(location, newLocation)) return false;
 
 			// Okay, we passed all the illegality checks! The move must be legal.
-			this.informationMessage = "Move is legal. Click the yellow box to change turns.";
 			return true;
+		},
+		isLegalWall: function isLegalWall(wallIndex1, wallIndex2, isVertical) {
+			if (this.wouldMoveBlockPlayer(this.activePlayer, wallIndex1, wallIndex2, isVertical)) return false;
+
+			// Is the non-active player blocked?
+			if (this.wouldMoveBlockPlayer(this.nonActivePlayer, wallIndex1, wallIndex2, isVertical)) return false;
+
+			return true;
+		},
+		wouldMoveBlockPlayer: function wouldMoveBlockPlayer(player, wallIndex1, wallIndex2, isVertical) {
+			// Just a stub for now.
+			// #MoreTime - implement check to see if player would be blocked by this wall placement.
+			return false;
+		},
+		isPlayerAtGoal: function isPlayerAtGoal(player, location) {
+			if (player == 'O') return location > 72;
+			// else we're player X
+			return location < 10;
+		},
+		compare: function compare(a, b) {
+			if (parseInt(a._props.name) < parseInt(b._props.name)) return -1;
+			if (parseInt(a._props.name) > parseInt(b._props.name)) return 1;
+			return 0;
 		}
 	},
 	components: {
@@ -48083,6 +48103,9 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 				return child.$options._componentTag === "quoridor-cell";
 			});
 
+			// Order is must match our calculated array to ensure we're updating the correct display.
+			this.cellComponentsCache.sort(this.compare);
+
 			return this.cellComponentsCache;
 		},
 
@@ -48093,6 +48116,9 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 			this.verticalWallComponentsCache = this.$children.filter(function (child) {
 				return child.$options._componentTag === "quoridor-half-wall" && child.$options._parentVnode.data.staticClass.search('vertical') !== -1;
 			});
+
+			// Order is must match our calculated array to ensure we're updating the correct display.
+			this.verticalWallComponentsCache.sort(this.compare);
 
 			return this.verticalWallComponentsCache;
 		},
@@ -48105,7 +48131,9 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 				return child.$options._componentTag === "quoridor-half-wall" && child.$options._parentVnode.data.staticClass.search('horizontal') !== -1;
 			});
 
-			console.log(this.horizontalWallComponentsCache);
+			// Order is must match our calculated array to ensure we're updating the correct display.
+			this.horizontalWallComponentsCache.sort(this.compare);
+
 			return this.horizontalWallComponentsCache;
 		}
 	},
@@ -48116,12 +48144,13 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 		// it is called by the Cell component
 		Event.$on('strikeCell', function (cellNumber) {
 			if (_this.frozen) {
-				_this.informationMessage = "You cannot move. Click the yellow box to change turns.";
+				// this.informationMessage = "You cannot move. Click the yellow box to change turns.";
 				return;
 			}
 
 			if (!_this.isLegalMove(_this.activePlayer, cellNumber)) {
 				_this.informationMessage = "Illegal move.";
+
 				return;
 			}
 
@@ -48142,12 +48171,25 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 			_this.frozen = true;
 
-			// this.updateComponents();
+			if (_this.isPlayerAtGoal(_this.activePlayer, cellNumber)) {
+				_this.gameStatus = "win";
+
+				_this.gameStatusColor = "statusWin";
+
+				_this.gameStatusMessage = "Player " + _this.activePlayer + " wins!";
+
+				_this.informationMessage = "";
+
+				Event.$emit('win', _this.activePlayer);
+
+				return;
+			}
+
+			_this.finishTurn();
 		});
 		Event.$on('strikeWall', function (wallNumber, isVertical) {
 			if (_this.frozen) {
-				_this.informationMessage = "You've already moved this turn. Click the yellow button to end your turn.";
-
+				// this.informationMessage = "You've already moved this turn. Click the yellow button to end your turn.";
 				return;
 			}
 
@@ -48164,6 +48206,16 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 				else pairedWallNumber = parseInt(wallNumber) + 8;
 
+				if (_this.verticalWalls[wallNumber - 1] != '' && _this.verticalWalls[pairedWallNumber - 1] != '') {
+					_this.informationMessage = "There is already a wall here.";
+					return;
+				}
+
+				if (!_this.isLegalWall(wallNumber - 1, pairedWallNumber - 1, true)) {
+					_this.informationMessage("Placing a wall there would block a player away from their goal, which is illegal.");
+					return;
+				}
+
 				_this.verticalWalls[wallNumber - 1] = _this.verticalWalls[pairedWallNumber - 1] = _this.activePlayer;
 
 				_this.verticalWallComponents[wallNumber - 1].set(_this.activePlayer);
@@ -48173,6 +48225,12 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 				if ((parseInt(wallNumber) + 1) % 9 == 1) pairedWallNumber = parseInt(wallNumber) - 1; // Player clicked a right-most wall
 
 				else pairedWallNumber = parseInt(wallNumber) + 1;
+
+				if (_this.horizontalWalls[wallNumber - 1] != '' && _this.horizontalWalls[pairedWallNumber - 1] != '') {
+					_this.informationMessage = "There is already a wall here.";
+
+					return;
+				}
 
 				_this.horizontalWalls[wallNumber - 1] = _this.horizontalWalls[pairedWallNumber - 1] = _this.activePlayer;
 
@@ -48186,6 +48244,51 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 			_this.informationMessage = "Player " + _this.activePlayer + ", you have " + _this.availableWalls[_this.activePlayer] + " walls remaining.";
 
 			_this.frozen = true;
+
+			_this.finishTurn();
+		});
+		Event.$on("resetGrid", function () {
+			// Clear the displayed positions
+			_this.cellComponents[_this.currentLocation("O") - 1].clear();
+
+			_this.cellComponents[_this.currentLocation("X") - 1].clear();
+
+			// Clear grid memory positions used for calculations
+			_this.cells = Array(81).fill('');
+
+			// Reset pawn positions on components and grid-memory reference cache
+			_this.cellComponents[4].set("O");
+
+			_this.cells[4] = "O";
+
+			_this.cellComponents[76].set("X");
+
+			_this.cells[76] = "X";
+
+			// Clear component caches
+			_this.cellComponentsCache = _this.horizontalWallComponentsCache = _this.verticalWallComponentsCache = [];
+
+			// Give both players their walls back
+			_this.availableWalls = {
+				"O": 8,
+				"X": 8
+			};
+
+			// Unfreeze the board so players can move again
+			_this.frozen = false;
+
+			// Player O always starts
+			_this.activePlayer = "O";
+
+			// Set information message with instructions for Player O.
+			_this.informationMessage = "Player " + _this.activePlayer + ", move your pawn or place a wall.";
+
+			// Reset turn displays
+			_this.gameStatus = "turn";
+
+			_this.gameStatusColor = "statusTurn";
+
+			_this.gameStatusMessage = _this.activePlayer + '\'s turn';;
 		});
 	},
 	mounted: function mounted() {
@@ -48214,7 +48317,7 @@ function injectStyle (ssrContext) {
   if (disposed) return
   __webpack_require__(52)
 }
-var normalizeComponent = __webpack_require__(5)
+var normalizeComponent = __webpack_require__(4)
 /* script */
 var __vue_script__ = __webpack_require__(54)
 /* template */
@@ -48267,7 +48370,7 @@ var content = __webpack_require__(53);
 if(typeof content === 'string') content = [[module.i, content, '']];
 if(content.locals) module.exports = content.locals;
 // add the styles to the DOM
-var update = __webpack_require__(4)("6b06a870", content, false, {});
+var update = __webpack_require__(3)("6b06a870", content, false, {});
 // Hot Module Replacement
 if(false) {
  // When the styles change, update the <style> tags
@@ -48286,12 +48389,12 @@ if(false) {
 /* 53 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(3)(false);
+exports = module.exports = __webpack_require__(2)(false);
 // imports
 
 
 // module
-exports.push([module.i, "\n.cell {\n\twidth: 4vw;\n\theight: 4vw;\n\tbackground-color: #34495e;\n\tborder: 6px solid #2c3e50;\n\tfont-size: 3.25vw; /* So you don't see re-sizing artifacts when moving pawn. */\n\tfont-family: 'Gochi Hand', sans-serif;\n}\n.cell:hover {\n\tbackground-color: #7f8c8d;\n}\n.cell::after {\n\tcontent: '';\n\tdisplay: block;\n}\n\n", ""]);
+exports.push([module.i, "\n.cell {\n\twidth: 5vw;\n\theight: 5vw;\n\tbackground-color: #181b13;\n\tmargin: 4px;\n\t/*border: 6px solid #2c3e50;*/\n\t-webkit-box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);\n\t        box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);\n\tfont-size: 3.25vw; /* So you don't see re-sizing artifacts when moving pawn. */\n\tfont-family: 'Gochi Hand', sans-serif;\n}\n.cell:hover {\n\tbackground-color: #323928;\n}\n.cell::after {\n\tcontent: '';\n\tdisplay: block;\n}\n\n", ""]);
 
 // exports
 
@@ -48355,6 +48458,166 @@ if (false) {
 /* 56 */
 /***/ (function(module, exports, __webpack_require__) {
 
+var disposed = false
+function injectStyle (ssrContext) {
+  if (disposed) return
+  __webpack_require__(57)
+}
+var normalizeComponent = __webpack_require__(4)
+/* script */
+var __vue_script__ = __webpack_require__(59)
+/* template */
+var __vue_template__ = __webpack_require__(60)
+/* template functional */
+var __vue_template_functional__ = false
+/* styles */
+var __vue_styles__ = injectStyle
+/* scopeId */
+var __vue_scopeId__ = null
+/* moduleIdentifier (server only) */
+var __vue_module_identifier__ = null
+var Component = normalizeComponent(
+  __vue_script__,
+  __vue_template__,
+  __vue_template_functional__,
+  __vue_styles__,
+  __vue_scopeId__,
+  __vue_module_identifier__
+)
+Component.options.__file = "resources/assets/js/components/QuoridorHalfWall.vue"
+
+/* hot reload */
+if (false) {(function () {
+  var hotAPI = require("vue-hot-reload-api")
+  hotAPI.install(require("vue"), false)
+  if (!hotAPI.compatible) return
+  module.hot.accept()
+  if (!module.hot.data) {
+    hotAPI.createRecord("data-v-7f26a4b9", Component.options)
+  } else {
+    hotAPI.reload("data-v-7f26a4b9", Component.options)
+  }
+  module.hot.dispose(function (data) {
+    disposed = true
+  })
+})()}
+
+module.exports = Component.exports
+
+
+/***/ }),
+/* 57 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(58);
+if(typeof content === 'string') content = [[module.i, content, '']];
+if(content.locals) module.exports = content.locals;
+// add the styles to the DOM
+var update = __webpack_require__(3)("0aab65ee", content, false, {});
+// Hot Module Replacement
+if(false) {
+ // When the styles change, update the <style> tags
+ if(!content.locals) {
+   module.hot.accept("!!../../../../node_modules/css-loader/index.js!../../../../node_modules/vue-loader/lib/style-compiler/index.js?{\"vue\":true,\"id\":\"data-v-7f26a4b9\",\"scoped\":false,\"hasInlineConfig\":true}!../../../../node_modules/vue-loader/lib/selector.js?type=styles&index=0!./QuoridorHalfWall.vue", function() {
+     var newContent = require("!!../../../../node_modules/css-loader/index.js!../../../../node_modules/vue-loader/lib/style-compiler/index.js?{\"vue\":true,\"id\":\"data-v-7f26a4b9\",\"scoped\":false,\"hasInlineConfig\":true}!../../../../node_modules/vue-loader/lib/selector.js?type=styles&index=0!./QuoridorHalfWall.vue");
+     if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+     update(newContent);
+   });
+ }
+ // When the module is disposed, remove the <style> tags
+ module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+/* 58 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(2)(false);
+// imports
+
+
+// module
+exports.push([module.i, "\n.wall {\n\tbackground-color: #0F110C;\n}\n/* #MoreTime - would convert this color change on hover to a js on mouse-over event, and color both cells the wall would apply to. */\n.wall:hover {\n\tbackground-color: #2a3022;\n}\n.horizontal {\n\theight: 6px;\n}\n.vertical {\n\twidth: 6px;\n}\n.playerO, .playerO:hover {\n\tbackground-color: #8F5A76;\n}\n.playerX, .playerX:hover {\n\tbackground-color: #CECCCC;\n}\n", ""]);
+
+// exports
+
+
+/***/ }),
+/* 59 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+//
+//
+//
+
+/* harmony default export */ __webpack_exports__["default"] = ({
+	props: ['name'],
+	data: function data() {
+		return {
+			player: ''
+		};
+	},
+
+	methods: {
+		set: function set(player) {
+			this.player = 'player' + player;
+
+			console.log(this);
+		},
+		clear: function clear() {
+			this.player = "";
+		},
+		strike: function strike() {
+			if (this.$options._parentVnode.data.staticClass.search('vertical') !== -1) {
+				Event.$emit("strikeWall", this.name, true);
+			}
+			if (this.$options._parentVnode.data.staticClass.search('horizontal') !== -1) {
+				Event.$emit('strikeWall', this.name, false);
+			}
+		}
+	},
+	created: function created() {
+		var _this = this;
+
+		Event.$on('clearWalls', function () {
+			_this.player = '';
+		});
+	}
+});
+
+/***/ }),
+/* 60 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var render = function() {
+  var _vm = this
+  var _h = _vm.$createElement
+  var _c = _vm._self._c || _h
+  return _c("td", {
+    staticClass: "wall",
+    class: _vm.player,
+    on: { click: _vm.strike }
+  })
+}
+var staticRenderFns = []
+render._withStripped = true
+module.exports = { render: render, staticRenderFns: staticRenderFns }
+if (false) {
+  module.hot.accept()
+  if (module.hot.data) {
+    require("vue-hot-reload-api")      .rerender("data-v-7f26a4b9", module.exports)
+  }
+}
+
+/***/ }),
+/* 61 */
+/***/ (function(module, exports, __webpack_require__) {
+
 var render = function() {
   var _vm = this
   var _h = _vm.$createElement
@@ -48362,15 +48625,9 @@ var render = function() {
   return _c("div", [
     _c("div", [_vm._v("\n\t\t" + _vm._s(_vm.informationMessage) + "\n\t")]),
     _vm._v(" "),
-    _c(
-      "div",
-      {
-        staticClass: "gameStatus",
-        class: _vm.gameStatusColor,
-        on: { click: _vm.finishTurn }
-      },
-      [_vm._v("\n\t    " + _vm._s(_vm.gameStatusMessage) + "\n\t")]
-    ),
+    _c("div", { staticClass: "gameStatus", class: _vm.gameStatusColor }, [
+      _vm._v("\n\t    " + _vm._s(_vm.gameStatusMessage) + "\n\t")
+    ]),
     _vm._v(" "),
     _c("table", { staticClass: "grid" }, [
       _c(
@@ -49498,7 +49755,7 @@ if (false) {
 }
 
 /***/ }),
-/* 57 */
+/* 62 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var render = function() {
@@ -49524,7 +49781,9 @@ var render = function() {
       _vm._v(" "),
       _c("quoridor-grid"),
       _vm._v(" "),
-      _c("button", { staticClass: "restart" }, [_vm._v("Restart")])
+      _c("button", { staticClass: "restart", on: { click: _vm.restart } }, [
+        _vm._v("Restart")
+      ])
     ],
     1
   )
@@ -49540,167 +49799,10 @@ if (false) {
 }
 
 /***/ }),
-/* 58 */
+/* 63 */
 /***/ (function(module, exports) {
 
 // removed by extract-text-webpack-plugin
-
-/***/ }),
-/* 59 */,
-/* 60 */,
-/* 61 */,
-/* 62 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var disposed = false
-function injectStyle (ssrContext) {
-  if (disposed) return
-  __webpack_require__(64)
-}
-var normalizeComponent = __webpack_require__(5)
-/* script */
-var __vue_script__ = __webpack_require__(66)
-/* template */
-var __vue_template__ = __webpack_require__(63)
-/* template functional */
-var __vue_template_functional__ = false
-/* styles */
-var __vue_styles__ = injectStyle
-/* scopeId */
-var __vue_scopeId__ = null
-/* moduleIdentifier (server only) */
-var __vue_module_identifier__ = null
-var Component = normalizeComponent(
-  __vue_script__,
-  __vue_template__,
-  __vue_template_functional__,
-  __vue_styles__,
-  __vue_scopeId__,
-  __vue_module_identifier__
-)
-Component.options.__file = "resources/assets/js/components/QuoridorHalfWall.vue"
-
-/* hot reload */
-if (false) {(function () {
-  var hotAPI = require("vue-hot-reload-api")
-  hotAPI.install(require("vue"), false)
-  if (!hotAPI.compatible) return
-  module.hot.accept()
-  if (!module.hot.data) {
-    hotAPI.createRecord("data-v-7f26a4b9", Component.options)
-  } else {
-    hotAPI.reload("data-v-7f26a4b9", Component.options)
-  }
-  module.hot.dispose(function (data) {
-    disposed = true
-  })
-})()}
-
-module.exports = Component.exports
-
-
-/***/ }),
-/* 63 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var render = function() {
-  var _vm = this
-  var _h = _vm.$createElement
-  var _c = _vm._self._c || _h
-  return _c("td", {
-    staticClass: "wall",
-    class: _vm.player,
-    on: { click: _vm.strike }
-  })
-}
-var staticRenderFns = []
-render._withStripped = true
-module.exports = { render: render, staticRenderFns: staticRenderFns }
-if (false) {
-  module.hot.accept()
-  if (module.hot.data) {
-    require("vue-hot-reload-api")      .rerender("data-v-7f26a4b9", module.exports)
-  }
-}
-
-/***/ }),
-/* 64 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(65);
-if(typeof content === 'string') content = [[module.i, content, '']];
-if(content.locals) module.exports = content.locals;
-// add the styles to the DOM
-var update = __webpack_require__(4)("0aab65ee", content, false, {});
-// Hot Module Replacement
-if(false) {
- // When the styles change, update the <style> tags
- if(!content.locals) {
-   module.hot.accept("!!../../../../node_modules/css-loader/index.js!../../../../node_modules/vue-loader/lib/style-compiler/index.js?{\"vue\":true,\"id\":\"data-v-7f26a4b9\",\"scoped\":false,\"hasInlineConfig\":true}!../../../../node_modules/vue-loader/lib/selector.js?type=styles&index=0!./QuoridorHalfWall.vue", function() {
-     var newContent = require("!!../../../../node_modules/css-loader/index.js!../../../../node_modules/vue-loader/lib/style-compiler/index.js?{\"vue\":true,\"id\":\"data-v-7f26a4b9\",\"scoped\":false,\"hasInlineConfig\":true}!../../../../node_modules/vue-loader/lib/selector.js?type=styles&index=0!./QuoridorHalfWall.vue");
-     if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-     update(newContent);
-   });
- }
- // When the module is disposed, remove the <style> tags
- module.hot.dispose(function() { update(); });
-}
-
-/***/ }),
-/* 65 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(3)(false);
-// imports
-
-
-// module
-exports.push([module.i, "\n.wall {\n\tbackground-color: #2c3e50;\n}\n/* #MoreTime - would convert this color change on hover to a js on mouse-over event, and color both cells the wall would apply to. */\n.wall:hover {\n\tbackground-color: #34495e;\n}\n.horizontal {\n\theight: 6px;\n}\n.vertical {\n\twidth: 6px;\n}\n.playerO, .playerO:hover {\n\tbackground-color: #87B6A7;\n}\n.playerX, .playerX:hover {\n\tbackground-color: #F7D08A;\n}\n", ""]);
-
-// exports
-
-
-/***/ }),
-/* 66 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-//
-//
-//
-
-/* harmony default export */ __webpack_exports__["default"] = ({
-	props: ['name'],
-	data: function data() {
-		return {
-			player: ''
-		};
-	},
-
-	methods: {
-		set: function set(player) {
-			this.player = 'player' + player;
-
-			console.log(this);
-		},
-		clear: function clear() {
-			this.player = "";
-		},
-		strike: function strike() {
-			console.log(this.$options._parentVnode.data.staticClass + " wall " + this.name + " was struck!");
-			if (this.$options._parentVnode.data.staticClass.search('vertical') !== -1) {
-				Event.$emit("strikeWall", this.name, true);
-			}
-			if (this.$options._parentVnode.data.staticClass.search('horizontal') !== -1) {
-				Event.$emit('strikeWall', this.name, false);
-			}
-		}
-	}
-});
 
 /***/ })
 /******/ ]);

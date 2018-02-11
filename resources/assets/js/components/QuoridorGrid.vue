@@ -385,19 +385,18 @@
 		},
 		methods: {
 			finishTurn() {
-				if (!this.frozen)
-				{
+				if (!this.frozen) {
 					this.informationMessage = `You must move your pawn or place a wall before ending your turn.`
 					return;
 				}
 
-				this.changePlayer();
-				this.gameStatusMessage = `${this.activePlayer}'s turn`;
-			},
-			changePlayer() {
 				this.activePlayer = this.nonActivePlayer;
+
 				this.frozen = false;
+
 				this.informationMessage = "Player " + this.activePlayer + ", move your pawn or place a wall."
+
+				this.gameStatusMessage = `${this.activePlayer}'s turn`;
 			},
 			currentLocation(player) {
 		    	return this.cells.indexOf(player) + 1; // Our cell ID's start at 1
@@ -424,6 +423,10 @@
 				// Check the pawn is only moving one square at a time.
 				if (Math.abs(location - newLocation) !== 1 // One square either left or right
 					&& Math.abs(location - newLocation) !== 9) // Our board is 9x9, so this calculates up/ down moves.
+					return false;
+
+				// if the other player is in the target location, the move is invalid.
+				if (this.currentLocation(this.nonActivePlayer) == newLocation)
 					return false;
 
 				return true;
@@ -499,8 +502,35 @@
 					return false;
 
 				// Okay, we passed all the illegality checks! The move must be legal.
-				this.informationMessage = "Move is legal. Click the yellow box to change turns."
 				return true;
+			},
+			isLegalWall(wallIndex1, wallIndex2, isVertical) {
+				if(this.wouldMoveBlockPlayer(this.activePlayer, wallIndex1, wallIndex2, isVertical))
+					return false;
+
+				// Is the non-active player blocked?
+				if(this.wouldMoveBlockPlayer(this.nonActivePlayer, wallIndex1, wallIndex2, isVertical))
+					return false;
+
+				return true;
+			},
+			wouldMoveBlockPlayer(player, wallIndex1, wallIndex2, isVertical) {
+				// Just a stub for now.
+				// #MoreTime - implement check to see if player would be blocked by this wall placement.
+				return false;
+			},
+			isPlayerAtGoal(player, location) {
+				if (player == 'O')
+					return location > 72;
+				// else we're player X
+				return location < 10;
+			},
+			compare(a,b) {
+				if (parseInt(a._props.name) < parseInt(b._props.name))
+					return -1;
+				if (parseInt(a._props.name) > parseInt(b._props.name))
+					return 1;
+				return 0;
 			}
 		},
 		components: {
@@ -522,6 +552,9 @@
 
 		    	this.cellComponentsCache = this.$children.filter(child => child.$options._componentTag === "quoridor-cell");
 
+		    	// Order is must match our calculated array to ensure we're updating the correct display.
+		    	this.cellComponentsCache.sort(this.compare);
+
 		    	return this.cellComponentsCache;
 		    },
 		    // helper property to filter children to cell components only so we can match to data.cells array
@@ -530,6 +563,9 @@
 		    		return this.verticalWallComponentsCache;
 
 		    	this.verticalWallComponentsCache = this.$children.filter(child => child.$options._componentTag === "quoridor-half-wall" && child.$options._parentVnode.data.staticClass.search('vertical') !== -1);
+
+		    	// Order is must match our calculated array to ensure we're updating the correct display.
+		    	this.verticalWallComponentsCache.sort(this.compare);
 
 		    	return this.verticalWallComponentsCache;
 		    },
@@ -540,7 +576,9 @@
 
 		    	this.horizontalWallComponentsCache = this.$children.filter(child => child.$options._componentTag === "quoridor-half-wall" && child.$options._parentVnode.data.staticClass.search('horizontal') !== -1);
 
-		    	console.log(this.horizontalWallComponentsCache);
+		    	// Order is must match our calculated array to ensure we're updating the correct display.
+		    	this.horizontalWallComponentsCache.sort(this.compare);
+
 		    	return this.horizontalWallComponentsCache;
 		    }
 		},
@@ -548,15 +586,14 @@
 			// listens for a strike made by the user on cell
 			// it is called by the Cell component
 			Event.$on('strikeCell', (cellNumber) => {
-				if (this.frozen)
-				{
-					this.informationMessage = "You cannot move. Click the yellow box to change turns.";
+				if (this.frozen) {
+					// this.informationMessage = "You cannot move. Click the yellow box to change turns.";
 					return;
 				}
 
-				if (!this.isLegalMove(this.activePlayer, cellNumber))
-				{
-					this.informationMessage = "Illegal move."
+				if (!this.isLegalMove(this.activePlayer, cellNumber)) {
+					this.informationMessage = "Illegal move.";
+
 					return;
 				}
 
@@ -577,12 +614,25 @@
 
 		        this.frozen = true;
 
-		        this.changePlayer();
+		        if (this.isPlayerAtGoal(this.activePlayer, cellNumber)) {
+		        	this.gameStatus = "win";
+
+		        	this.gameStatusColor = "statusWin";
+
+		        	this.gameStatusMessage = "Player " + this.activePlayer + " wins!";
+
+		        	this.informationMessage = ""
+
+		        	Event.$emit('win', this.activePlayer);
+
+		        	return;
+		        }
+
+		        this.finishTurn();
 			});
 			Event.$on('strikeWall', (wallNumber, isVertical) => {
 				if (this.frozen) {
-					this.informationMessage = "You've already moved this turn. Click the yellow button to end your turn.";
-
+					// this.informationMessage = "You've already moved this turn. Click the yellow button to end your turn.";
 					return;
 				}
 
@@ -606,6 +656,11 @@
 						return;
 					}
 
+					if(!this.isLegalWall(wallNumber - 1, pairedWallNumber -1, true)) {
+						this.informationMessage("Placing a wall there would block a player away from their goal, which is illegal.");
+						return;
+					}
+
 					this.verticalWalls[wallNumber - 1] = this.verticalWalls[pairedWallNumber - 1] = this.activePlayer;
 
 					this.verticalWallComponents[wallNumber - 1].set(this.activePlayer);
@@ -622,6 +677,7 @@
 					if(this.horizontalWalls[wallNumber - 1] != ''
 						&& this.horizontalWalls[pairedWallNumber - 1] != '') {
 						this.informationMessage = "There is already a wall here."
+
 						return;
 					}
 
@@ -638,7 +694,51 @@
 
 				this.frozen = true;
 
-				this.changePlayer();
+				this.finishTurn();
+			});
+			Event.$on("resetGrid", () => {
+				// Clear the displayed positions
+				this.cellComponents[this.currentLocation("O")-1].clear();
+
+				this.cellComponents[this.currentLocation("X")-1].clear();
+
+				// Clear grid memory positions used for calculations
+				this.cells = Array(81).fill('');
+
+				// Reset pawn positions on components and grid-memory reference cache
+				this.cellComponents[4].set("O");
+
+				this.cells[4] = "O";
+
+				this.cellComponents[76].set("X");
+
+				this.cells[76] = "X";
+
+				// Clear component caches
+				this.cellComponentsCache = this.horizontalWallComponentsCache = this.verticalWallComponentsCache = [];
+
+				// Give both players their walls back
+				this.availableWalls = {
+					"O": 8,
+					"X": 8
+				};
+
+				// Unfreeze the board so players can move again
+				this.frozen = false;
+
+				// Player O always starts
+				this.activePlayer = "O";
+
+				// Set information message with instructions for Player O.
+				this.informationMessage = "Player " + this.activePlayer + ", move your pawn or place a wall.";
+
+				// Reset turn displays
+	        	this.gameStatus = "turn";
+
+	        	this.gameStatusColor = "statusTurn";
+
+	        	this.gameStatusMessage = `${this.activePlayer}'s turn`;;
+
 			});
 		},
 		mounted() {
@@ -661,11 +761,11 @@
 
 <style>
 	td {
-		background-color: #2c3e50
+		background-color: #0F110C
 	}
 	.grid {
-		background-color: #34495e;
-		color: #fff;
+		background-color: #0F110C;
+		/*color: #fff;*/
 		width: 100%;
 		border-collapse: collapse;
 	}
@@ -675,14 +775,14 @@
 		padding: 15px;
 		border-top-left-radius: 20px;
 		border-top-right-radius: 20px;
-		background-color: #f1c40f;
+		background-color: #CECCCC;
 		color: #fff;
 		font-size: 3vw;
 		font-weight: bold;
 	}
 
 	.statusTurn {
-		background-color: #f1c40f;
+		background-color: #8B8183;
 	}
 
 	.statusTurn:hover {
@@ -691,10 +791,11 @@
 	}
 
 	.statusWin {
-		background-color: #2ecc71;
+		background-color: #f1d57e;
+		color: #8F5A76;
 	}
 
 	.statusDraw {
-		background-color: #9b59b6;
+		background-color: #0F110C;
 	}
 </style>
