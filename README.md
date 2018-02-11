@@ -9,7 +9,7 @@ How to Run
 
 3. If you need to re-install the node packages using a Homestead VirtualBox virtual machine running on Windows, do an `rm -rf` to clear all the packages, then do `sudo yarn install --no-bin-links`. 
     * Yarn is able to skip a failing optional dependency.
-    * No bin links is necessary as the vagrant VirtualBox Homestead machine was not able to create the bin links for teh acorn package install.
+    * No bin links is necessary as the vagrant VirtualBox Homestead machine hosted on Windows was not able to create the bin links for the acorn package install.
 
 ### Developer software versions
 * Operating system: Windows 10 Home version 1709, OS Build 16299.192
@@ -91,8 +91,9 @@ The meat of the code is in this class.
 * As its name indicates, this contains the template and styling elements for a half wall. 
 
 * The first half wall is always what the user clicks. A `strikeWall` event is thrown on click to notify the parent of the action.
+    * It is the grid's job to determine the second half of the wall. It also calls the `set(player)` method on all wall elements.
 
-* It is the grid's job to determine the second half of the wall.
+* Watches for a clear event when the grandparent restarts the game.
 
 * Contains wall styling. 
     * Any changes to wall sizes or colors should be done in tandem with the board (td element, color palette agreement) and the cells (sizing and color palette agreement).
@@ -106,6 +107,11 @@ Dev Tests
         * Yes.
     * All console logging disabled?
         * Yes, no console logging was observed when re-running below tests.
+    * Can the user affect the behavior of the app using the dev console?
+        * Probably, but it's non-trival to access the Vue objects outside the context of the component, so this is prretty safe.
+    * Can the user cheat the game by clicking in an unexpected area?
+        * A bug was found on reset, where the child components might be gathered into the grid's cache out of order, which broke the move legality calculations. The cache is now sorted by name to avoid this.
+        * Other than the above, no, to the dev's knowledge. All actions are driven by a user click on specific elements; as an example, there's no class monitoring, so unless the user interacts with the correct elements, the average user won't be able to do anything with the app.
 * Performance tests
     * Any delay when interacting with the user interface?
         * No.
@@ -214,8 +220,10 @@ These prospective changes are in priority order. My reasoning for the priority c
 9. Modify the pawn display to use icons.
     * Makes the user interface look more professional.
 
-10. Modify element numbering to match array numbering scheme
+10. Implement extra credit elements. Creating a score metric (likely the number of total moves) and creating a backend with users would extend my Laravel experience.
+
+11. Modify element numbering to match array numbering scheme
     * We need to mix numbering patterns, since the 0-based values are needed for arrays, but the 1-based values are used to calculate moves. This mix is complex enough to keep track of if we'd made everything numbered the same, so just modify the names to start at 0 as a best practice.
     * This would break a number of methods, and unit tests aren't in place to catch all of these, so this is too high risk to do right now.
 
-11. Refactor all player logic into a relative calculation, and put it in its own component/ class (research how to handle display-less components - classes - with Vue). This would open the door for a 4 player Quoridor variant with minimal additonal code.
+12. Refactor all player logic into a relative calculation, and put it in its own component/ class (research how to handle display-less components - classes - with Vue). This would open the door for a 4 player Quoridor variant with minimal additonal code.
