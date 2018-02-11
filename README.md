@@ -106,9 +106,6 @@ Dev Tests
         * Yes.
     * All console logging disabled?
         * Yes, no console logging was observed when re-running below tests.
-* Performance tests
-    * Any delay when interacting with the user interface?
-        * No.
 * Pawn tests
     * Can a pawn move only one cell at a time?
         * Yes, else "Illegal move" is displayed in the dynamic instructions.
@@ -169,7 +166,7 @@ These prospective changes are in priority order. My reasoning for the priority c
 
                  GOAL
                | | | |
-               =======
+                _ _ _
                | |X| |
 
                 * If this check is true, the move is illegal. Return false.
@@ -178,7 +175,7 @@ These prospective changes are in priority order. My reasoning for the priority c
 
                  GOAL
                | | | |
-               | |====
+               | |_ _
                | / | |
                | / | |
                | / |X|
