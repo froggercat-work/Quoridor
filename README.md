@@ -106,6 +106,9 @@ Dev Tests
         * Yes.
     * All console logging disabled?
         * Yes, no console logging was observed when re-running below tests.
+* Performance tests
+    * Any delay when interacting with the user interface?
+        * No.
 * Pawn tests
     * Can a pawn move only one cell at a time?
         * Yes, else "Illegal move" is displayed in the dynamic instructions.
