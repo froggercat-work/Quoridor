@@ -380,7 +380,9 @@
 					"X": 8
 				},
 
-				informationMessage: "Player O, move your pawn or place a wall."
+				informationMessage: "Player O, move your pawn or place a wall.",
+
+				timer: ""
 			}
 		},
 		methods: {
@@ -394,9 +396,12 @@
 
 				this.frozen = false;
 
-				this.informationMessage = "Player " + this.activePlayer + ", move your pawn or place a wall."
-
 				this.gameStatusMessage = `${this.activePlayer}'s turn`;
+
+	        	clearTimeout(this.timer);
+				
+				// Since we switch turns without prompting, keep the pre-existing display message up for a second or two so the user can read it.
+				this.timer = setTimeout(() => this.informationMessage = "Player " + this.activePlayer + ", move your pawn or place a wall.",  2000);
 			},
 			currentLocation(player) {
 		    	return this.cells.indexOf(player) + 1; // Our cell ID's start at 1
@@ -505,14 +510,51 @@
 				return true;
 			},
 			isLegalWall(wallIndex1, wallIndex2, isVertical) {
-				if(this.wouldMoveBlockPlayer(this.activePlayer, wallIndex1, wallIndex2, isVertical))
+				if (this.isThereAWallHere(wallIndex1, wallIndex2, isVertical)) {
+					console.log("There's a wall here.")
+					this.informationMessage = "There is already a wall here.";
+
 					return false;
+				}
+
+				if(this.wouldMoveBlockPlayer(this.activePlayer, wallIndex1, wallIndex2, isVertical)) {
+					console.log("wall blocks active player");
+					this.informationMessage = "Placing a wall there would block player " + this.activePlayer + " from their goal, which is illegal.";
+
+					return false;
+				}
 
 				// Is the non-active player blocked?
-				if(this.wouldMoveBlockPlayer(this.nonActivePlayer, wallIndex1, wallIndex2, isVertical))
+				if(this.wouldMoveBlockPlayer(this.nonActivePlayer, wallIndex1, wallIndex2, isVertical)){
+					console.log("wall blocks inactive player");
+					this.informationMessage = "Placing a wall there would block player " + this.nonActivePlayer + " from their goal, which is illegal.";
 					return false;
+				}
 
+				console.log("Legal wall.");
 				return true;
+			},
+			isThereAWallHere(wallIndex1, wallIndex2, isVertical) {
+				console.log(wallIndex1, wallIndex2, isVertical)
+				console.log(this.verticalWalls);
+				console.log(this.horizontalWalls);
+				if (isVertical) {
+					if(this.verticalWalls[wallIndex1] !== ''
+						&& this.verticalWalls[wallIndex2] !== '') {
+						console.log('there is a vertical wall here')
+						return true;
+					}
+					return false;
+				}
+
+				if(this.horizontalWalls[wallIndex1] !== ''
+					&& this.horizontalWalls[wallIndex2] !== '') {
+					console.log('there is a horizontal wall here')
+					return true;
+				}
+
+				console.log("No wall here");
+				return false;
 			},
 			wouldMoveBlockPlayer(player, wallIndex1, wallIndex2, isVertical) {
 				// Just a stub for now.
@@ -621,12 +663,16 @@
 
 		        	this.gameStatusMessage = "Player " + this.activePlayer + " wins!";
 
+		        	clearTimeout(this.timer);
+
 		        	this.informationMessage = ""
 
 		        	Event.$emit('win', this.activePlayer);
 
 		        	return;
 		        }
+
+		        this.informationMessage = "Player " + this.activePlayer + " made a legal move.";
 
 		        this.finishTurn();
 			});
@@ -650,14 +696,8 @@
 
 					else pairedWallNumber = parseInt(wallNumber) + 8;
 
-					if(this.verticalWalls[wallNumber - 1] != ''
-						&& this.verticalWalls[pairedWallNumber - 1] != '') {
-						this.informationMessage = "There is already a wall here."
-						return;
-					}
-
 					if(!this.isLegalWall(wallNumber - 1, pairedWallNumber -1, true)) {
-						this.informationMessage("Placing a wall there would block a player away from their goal, which is illegal.");
+						console.log("Illegal wall")
 						return;
 					}
 
@@ -674,10 +714,7 @@
 
 					else pairedWallNumber = parseInt(wallNumber) + 1;
 
-					if(this.horizontalWalls[wallNumber - 1] != ''
-						&& this.horizontalWalls[pairedWallNumber - 1] != '') {
-						this.informationMessage = "There is already a wall here."
-
+					if(!this.isLegalWall(wallNumber - 1, pairedWallNumber -1, false)) {
 						return;
 					}
 
@@ -695,6 +732,7 @@
 				this.frozen = true;
 
 				this.finishTurn();
+
 			});
 			Event.$on("resetGrid", () => {
 				// Clear the displayed positions
