@@ -106,6 +106,9 @@ Dev Tests
         * Yes.
     * All console logging disabled?
         * Yes, no console logging was observed when re-running below tests.
+* Performance tests
+    * Any delay when interacting with the user interface?
+        * No.
 * Pawn tests
     * Can a pawn move only one cell at a time?
         * Yes, else "Illegal move" is displayed in the dynamic instructions.
@@ -164,21 +167,25 @@ These prospective changes are in priority order. My reasoning for the priority c
         * For each player (X and O), we will need to run mirror immages of the checks:
             1. Are there walls along every element between the player and their goal?
 
+               ```
                  GOAL
                | | | |
-                _ _ _
+               =======
                | |X| |
+               ```
 
                 * If this check is true, the move is illegal. Return false.
 
             2. Is there a vertical wall which stretches from the horizontal wall as it extends left of the pawn to the player's side of the board? Does the horizontal wall strech all the way to the right-most edge of the board?
 
+               ```
                  GOAL
                | | | |
-               | |_ _
+               | |====
                | / | |
                | / | |
                | / |X|
+               ```
 
                 * If this check is true, the move is illegal. Return false.
 
